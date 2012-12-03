@@ -5,7 +5,7 @@ import asyncore
 import time
 
 PORT = 50000
-NAME = "TestChat"
+NAME = "CodeCafe"
 
 class User(object):
 	def __init__(self, name, pwd, isAdmin=False):
@@ -109,7 +109,27 @@ class ChatRoom(Room):
 				session.push(msgPkg)
 			else:
 				session.push("No such person online.\r\n")
-		
+
+	def do_editBoard(self, session, line):
+		if session.user.isAdmin:
+			self.server.board = line
+			self.broadcast("board " + line + "\r\n")
+		else:
+			session.push("error You don't have permission.\r\n")
+
+	def do_editAppointment(self, session, line):
+		index, content = line.split(' ', 1)
+		if session.user.isAdmin:
+			self.server.appointments[int(index)] = content
+			self.broadcast("appointment " + line + "\r\n")
+		else:
+			session.push("error You don't have permission.\r\n")
+
+	def do_refresh(self, session, line):
+		session.push("board " + self.server.board + "\r\n")
+		for i, content in enumerate(self.server.appointments):
+			session.push("appointment %d %s\r\n" % (i, content))
+		session.push("user " + ' '.join(name for name in self.server.users) + "\r\n")
 
 	def do_look(self, session, line):
 		session.push("The following are in this room:\r\n")
@@ -173,9 +193,11 @@ class ChatServer(dispatcher):
 		self.bind(('', port))
 		self.listen(5)
 		self.name = name
+		self.board = ""
+		self.appointments = ["", "", ""]
 		self.users = {}
 		self.main_room = ChatRoom(self)
-		print "sucess initialize ChatServer.\n"
+		print "sucess initialize ChatServer."
 
 	def handle_accept(self):
 		connetion, addr = self.accept()
