@@ -7,6 +7,25 @@ import time
 PORT = 50000
 NAME = "TestChat"
 
+class User(object):
+	def __init__(self, name, pwd, isAdmin=False):
+		self.name = name
+		self.pwd = pwd
+		self.state = "offline"
+		self.isAdmin = isAdmin
+	def setPassword(self, newpwd):
+		self.pwd = newpwd
+	def setState(self, newstate):
+		self.state = newstate
+
+UserDict = dict([(u.name, u) for u in
+			[
+            User("guyuhao", "tbontb", True),
+            User("linyiyang", "123456", True),
+            User("hongyan", "hongyan"),
+            User("wanglang", "wanglang")
+            ]])
+
 class EndSession(Exception):
 	pass
 
@@ -59,32 +78,29 @@ class LoginRoom(Room):
 		session.push("Please log in\nUse 'login <nick>'\r\n")
 
 	def do_login(self, session, line):
-		name = line.strip()
-		if not name:
-			session.push("Please enter a name\r\n")
-		elif name in self.server.users:
-			session.push("The name '%s' is taken.\r\n" % name)
-			session.push("Please try again.\r\n")
-		else:
-			session.name = name
+		name, pwd = line.strip().split(' ')
+		if name in UserDict and UserDict[name].pwd == pwd:
+			session.user = UserDict[name]
 			session.enter(self.server.main_room)
+		else:
+			session.push("unknown user name or bad password.\r\n")
 
 class ChatRoom(Room):
 
 	def add(self, session):
-		self.broadcast(session.name + " has enter the room.\r\n")
-		self.server.users[session.name] = session
+		self.broadcast(session.user.name+ " has enter the room.\r\n")
+		self.server.users[session.user.name] = session
 		Room.add(self, session)
 
 	def remove(self, session):
 		Room.remove(self, session)
-		self.broadcast(session.name + " has left the room.\r\n")
+		self.broadcast(session.user.name + " has left the room.\r\n")
 
 	def do_say(self, session, line):
 		dst, msg = line.split(' ', 1)
 		nowtime = time.strftime('%H:%M:%S')
-		msgPkg = nowtime + ' ' + session.name + " to " + dst + ": \r\n" + msg + "\r\n"
-		if dst == "all":
+		msgPkg = nowtime + ' ' + session.user.name + " to " + dst + ": \r\n" + msg + "\r\n"
+		if dst == "-all":
 			self.broadcast(msgPkg)
 		else:
 			dstSession = self.server.users.get(dst)
@@ -98,7 +114,7 @@ class ChatRoom(Room):
 	def do_look(self, session, line):
 		session.push("The following are in this room:\r\n")
 		for other in self.sessions:
-			session.push(other.name + "\r\n")
+			session.push(other.user.name + "\r\n")
 
 	def do_who(self, session, line):
 		session.push("The following are logged in:\r\n")
@@ -109,7 +125,7 @@ class LogoutRoom(Room):
 
 	def add(self, session):
 		try:
-			del self.server.users[session.name]
+			del self.server.users[session.user.name]
 		except KeyError:
 			pass
 
@@ -120,7 +136,7 @@ class ChatSession(async_chat):
 		self.server = server
 		self.set_terminator("\r\n")
 		self.data = []
-		self.name = None
+		self.user = None
 		self.enter(LoginRoom(server))
 
 	def enter(self, room):
