@@ -165,7 +165,7 @@
      <attribute name="title">
       <string>File</string>
      </attribute>
-     <widget class="QPushButton" name="pushButton_2">
+     <widget class="QPushButton" name="OpenFileButton">
       <property name="geometry">
        <rect>
         <x>480</x>
