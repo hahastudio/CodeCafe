@@ -42,7 +42,7 @@ class Ui_Login(object):
         self.verticalLayout.addWidget(self.buttonBox)
 
         self.retranslateUi(Login)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Login.accept)
+        #QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Login.accept)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), Login.reject)
         QtCore.QMetaObject.connectSlotsByName(Login)
 

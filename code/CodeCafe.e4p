@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Project SYSTEM "Project-4.6.dtd">
 <!-- eric4 project file for project CodeCafe -->
-<!-- Saved: 2012-12-09, 09:50:02 -->
+<!-- Saved: 2012-12-09, 13:01:07 -->
 <!-- Copyright (C) 2012 ,  -->
 <Project version="4.6">
   <Language>en</Language>
@@ -17,12 +17,13 @@
     <Source>FileServer.py</Source>
     <Source>IM-haha-Client.py</Source>
     <Source>setup-client.py</Source>
-    <Source>UI_Client.py</Source>
     <Source>__init__.py</Source>
+    <Source>UI_Client.py</Source>
+    <Source>UI_Login.py</Source>
   </Sources>
   <Forms>
-    <Form>UI-Login.ui</Form>
     <Form>UI_Client.ui</Form>
+    <Form>UI_Login.ui</Form>
   </Forms>
   <Translations>
   </Translations>

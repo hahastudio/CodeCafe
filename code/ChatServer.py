@@ -80,8 +80,12 @@ class LoginRoom(Room):
 	def do_login(self, session, line):
 		name, pwd = line.strip().split(' ')
 		if name in UserDict and UserDict[name].pwd == pwd:
-			session.user = UserDict[name]
-			session.enter(self.server.main_room)
+			if not name in self.server.users:
+				session.user = UserDict[name]
+				session.push("Welcome, %s\r\n" % name)
+				session.enter(self.server.main_room)
+			else:
+				session.push("The user %s is already online!\r\n" % name)
 		else:
 			session.push("unknown user name or bad password.\r\n")
 
@@ -99,7 +103,7 @@ class ChatRoom(Room):
 	def do_say(self, session, line):
 		dst, msg = line.split(' ', 1)
 		nowtime = time.strftime('%H:%M:%S')
-		msgPkg = nowtime + ' ' + session.user.name + " to " + dst + ": \r\n" + msg + "\r\n"
+		msgPkg = nowtime + ' ' + session.user.name + " to " + dst + ": \n" + msg + "\r\n"
 		if dst == "-all":
 			self.broadcast(msgPkg)
 		else:
@@ -184,7 +188,7 @@ class ChatSession(async_chat):
 		async_chat.handle_close(self)
 		self.enter(LogoutRoom(self.server))
 
-class ChatServer(dispatcher):
+class MessageServer(dispatcher):
 
 	def __init__(self, port, name):
 		dispatcher.__init__(self)
@@ -204,7 +208,7 @@ class ChatServer(dispatcher):
 		ChatSession(self, connetion)
 
 if __name__ == '__main__':
-	s = ChatServer(PORT, NAME)
+	s = MessageServer(PORT, NAME)
 	try:
 		asyncore.loop()
 	except KeyboardInterrupt:

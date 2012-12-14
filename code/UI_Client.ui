@@ -24,13 +24,13 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="Tab1">
      <attribute name="title">
       <string>Board</string>
      </attribute>
-     <widget class="QTextBrowser" name="Board">
+     <widget class="QTextEdit" name="Board">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -40,7 +40,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QTextBrowser" name="appointment1">
+     <widget class="QTextEdit" name="appointment1">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -50,7 +50,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QTextBrowser" name="appointment2">
+     <widget class="QTextEdit" name="appointment2">
       <property name="geometry">
        <rect>
         <x>200</x>
@@ -60,7 +60,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QTextBrowser" name="appointment3">
+     <widget class="QTextEdit" name="appointment3">
       <property name="geometry">
        <rect>
         <x>390</x>
@@ -132,7 +132,7 @@
        <rect>
         <x>10</x>
         <y>0</y>
-        <width>551</width>
+        <width>561</width>
         <height>281</height>
        </rect>
       </property>
@@ -157,11 +157,11 @@
        </rect>
       </property>
       <property name="text">
-       <string>发送</string>
+       <string>Send</string>
       </property>
      </widget>
     </widget>
-    <widget class="QWidget" name="tab">
+    <widget class="QWidget" name="Tab3">
      <attribute name="title">
       <string>File</string>
      </attribute>
@@ -203,9 +203,9 @@
    <widget class="QListWidget" name="NameList">
     <property name="geometry">
      <rect>
-      <x>580</x>
+      <x>590</x>
       <y>20</y>
-      <width>151</width>
+      <width>141</width>
       <height>421</height>
      </rect>
     </property>
@@ -224,22 +224,31 @@
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
-     <string>账户</string>
+     <string>User</string>
     </property>
-    <addaction name="action"/>
-    <addaction name="action_2"/>
+    <addaction name="actionLogin"/>
+    <addaction name="actionLogout"/>
+    <addaction name="actionRefresh"/>
    </widget>
    <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="action">
+  <action name="actionLogin">
    <property name="text">
-    <string>登入</string>
+    <string>Login</string>
    </property>
   </action>
-  <action name="action_2">
+  <action name="actionLogout">
    <property name="text">
-    <string>登出</string>
+    <string>Logout</string>
+   </property>
+   <property name="toolTip">
+    <string>Logout</string>
+   </property>
+  </action>
+  <action name="actionRefresh">
+   <property name="text">
+    <string>refresh</string>
    </property>
   </action>
  </widget>

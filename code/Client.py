@@ -4,13 +4,14 @@
 所有导入的模块
 """
 from PyQt4 import QtCore, QtGui
-from PyQt4.QtGui import QWidget
+from PyQt4.QtGui import QMainWindow
 from PyQt4.QtCore import pyqtSignature
 from PyQt4.QtCore import QTextCodec
 import socket
 import re
 import time
 from UI_Client import Ui_MainWindow
+from UI_Login import Ui_Login
 
 import sys
 reload(sys)
@@ -70,12 +71,26 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         """
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
+        self.loginDlg = QtGui.QDialog()
+        self.loginDlgUI = Ui_Login()
+        self.loginDlgUI.setupUi(self.loginDlg)
         #connect functions
+        self.sendButton.clicked.connect(self.sendMsg)
+        self.actionLogin.triggered.connect(self.openLoginDlg)
+        self.actionLogout.triggered.connect(self.logout)
+        self.actionRefresh.triggered.connect(self.refresh)
+        self.loginDlgUI.buttonBox.accepted.connect(self.login)
+        self.EditBoardButton.clicked.connect(self.editBoard)
+        self.EditAppointment1Button.clicked.connect(self.editAppointment1)
+        self.EditAppointment2Button.clicked.connect(self.editAppointment2)
+        self.EditAppointment3Button.clicked.connect(self.editAppointment3)
 
         self.MessageHost = MESSAGEHOST
         self.MessagePort = MESSAGEPORT
         self.FileHost = FILEHOST
         self.FilePort = FILEPORT
+        self.username = None
+        self.password = None
         self.MessageSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.MessageSocket.connect((self.MessageHost, self.MessagePort))
@@ -86,29 +101,77 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         except socket.error:
             self.ChatBrowser.append('连接%s : %d失败'.decode('utf-8') % (self.MessageHost, self.MessagePort))
 
+    def openLoginDlg(self):
+        self.loginDlg.show()
+
     def login(self):
-        pass
+        self.username = str(self.loginDlgUI.usernameEdit.text())
+        self.password = str(self.loginDlgUI.paswordEdit.text())
+        self.MessageSocket.sendall("login %s %s\r\n" % (self.username, self.password))
+        self.loginDlg.close()
 
     def logout(self):
-        pass
+        self.MessageSocket.sendall("logout\r\n")
 
     def display(self):
-        pass
+        msgs = self.th.message.decode('utf-8').split("\r\n")
+        for msg in msgs:
+            if msg.startswith("board"):
+                cmd, content = msg.split(' ', 1)
+                self.Board.setText(content)
+            elif msg.startswith("appointment"):
+                cmd, index, appt = msg.split(' ', 2)
+                if index == '0':
+                    self.appointment1.setText(appt)
+                elif index == '1':
+                    self.appointment2.setText(appt)
+                elif index == '2':
+                    self.appointment3.setText(appt)
+            elif msg.startswith("user"):
+                userList = msg.split(' ')[1:]
+                self.NameList.clear()
+                for user in userList:
+                    self.NameList.addItem(user)
+            elif msg:
+                self.ChatBrowser.append(msg+"\n")
 
     def editBoard(self):
-        pass
+        board = str(self.Board.toPlainText()).decode("utf-8")
+        self.MessageSocket.sendall("editBoard %s\r\n" % board)
 
     def editAppointment1(self):
-        pass
+        appointment1 = str(self.appointment1.toPlainText()).decode("utf-8")
+        self.MessageSocket.sendall("editAppointment 0 %s\r\n" % appointment1)
 
     def editAppointment2(self):
-        pass
+        appointment2 = str(self.appointment2.toPlainText()).decode("utf-8")
+        self.MessageSocket.sendall("editAppointment 1 %s\r\n" % appointment2)
 
     def editAppointment3(self):
-        pass
+        appointment3 = str(self.appointment3.toPlainText()).decode("utf-8")
+        self.MessageSocket.sendall("editAppointment 2 %s\r\n" % appointment3)
 
     def sendMsg(self):
-        pass
+        txt = self.ChatEdit.toPlainText()
+        msg = str(txt).decode('utf-8')
+        self.MessageSocket.sendall("say %s\r\n" % msg)
+        self.ChatEdit.setText("")
 
     def refresh(self):
+        self.MessageSocket.sendall("refresh\r\n")
+
+    def uploadFile(self):
         pass
+
+    def downloadFile(self):
+        pass
+
+    def deleteFile(self):
+        pass
+
+if  __name__ == "__main__":
+    import sys
+    app = QtGui.QApplication(sys.argv)
+    dlg = ClientWindow()
+    dlg.show()
+    sys.exit(app.exec_())
