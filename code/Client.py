@@ -12,6 +12,7 @@ import re
 import time
 from UI_Client import Ui_MainWindow
 from UI_Login import Ui_Login
+from threading import RLock
 
 import sys
 reload(sys)
@@ -21,6 +22,8 @@ MESSAGEHOST = "localhost"
 MESSAGEPORT = 50000
 FILEHOST = "localhost"
 FILEPORT = 50001
+msgLock = RLock()
+msgLst = []
 
 def getip():
     """
@@ -47,7 +50,7 @@ class Thread2(QtCore.QThread):
         """
         super(Thread2, self).__init__()
         self.s = s
-        self.message = ""
+        #self.message = ""
 
     def run(self):
         """
@@ -58,10 +61,13 @@ class Thread2(QtCore.QThread):
         while 1:
             msg = self.s.recv(1024)
             if msg != "":
-                self.message = msg
+                #self.message = msg
+                msgLock.acquire()
+                msgLst.append(msg)
+                msgLock.release()
                 self.pressed.emit()
-            else:
-                self.message = self.message
+            #else:
+                #self.message = self.message
 
 class ClientWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent = None):
@@ -109,12 +115,18 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.password = str(self.loginDlgUI.paswordEdit.text())
         self.MessageSocket.sendall("login %s %s\r\n" % (self.username, self.password))
         self.loginDlg.close()
+        self.refresh()
 
     def logout(self):
         self.MessageSocket.sendall("logout\r\n")
 
     def display(self):
-        msgs = self.th.message.decode('utf-8').split("\r\n")
+        global msgLst
+        msgLock.acquire()
+        msgs = ("".join(m for m in msgLst).decode("utf-8")).split("\r\n")
+        msgLst = []
+        msgLock.release()
+        #msgs = self.th.message.decode('utf-8').split("\r\n")
         for msg in msgs:
             if msg.startswith("board"):
                 cmd, content = msg.split(' ', 1)
