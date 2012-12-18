@@ -4,7 +4,7 @@
 所有导入的模块
 """
 from PyQt4 import QtCore, QtGui
-from PyQt4.QtGui import QMainWindow
+from PyQt4.QtGui import QMainWindow, QLineEdit
 from PyQt4.QtCore import pyqtSignature
 from PyQt4.QtCore import QTextCodec
 import socket
@@ -91,6 +91,8 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.EditAppointment2Button.clicked.connect(self.editAppointment2)
         self.EditAppointment3Button.clicked.connect(self.editAppointment3)
 
+        self.loginDlgUI.paswordEdit.setEchoMode(QLineEdit.Password)
+
         self.MessageHost = MESSAGEHOST
         self.MessagePort = MESSAGEPORT
         self.FileHost = FILEHOST
@@ -114,6 +116,8 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.username = str(self.loginDlgUI.usernameEdit.text())
         self.password = str(self.loginDlgUI.paswordEdit.text())
         self.MessageSocket.sendall("login %s %s\r\n" % (self.username, self.password))
+        self.loginDlgUI.usernameEdit.setText("")
+        self.loginDlgUI.paswordEdit.setText("")
         self.loginDlg.close()
         self.refresh()
 
