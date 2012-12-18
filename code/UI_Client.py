@@ -14,6 +14,40 @@ try:
 except AttributeError:
     _fromUtf8 = lambda s: s
 
+class TextEdit(QtGui.QTextEdit):
+    """
+    A TextEdit editor that sends editingFinished events 
+    when the text was changed and focus is lost.
+    """
+
+    editingFinished = QtCore.pyqtSignal()
+    receivedFocus = QtCore.pyqtSignal()
+    
+    def __init__(self, parent):
+        super(TextEdit, self).__init__(parent)
+        self._changed = False
+        self.setTabChangesFocus( True )
+        self.textChanged.connect( self._handle_text_changed )
+
+    def focusInEvent(self, event):
+        super(TextEdit, self).focusInEvent( event )
+        self.receivedFocus.emit()
+
+    def focusOutEvent(self, event):
+        if self._changed:
+            self.editingFinished.emit()
+        super(TextEdit, self).focusOutEvent( event )
+
+    def _handle_text_changed(self):
+        self._changed = True
+
+    def setTextChanged(self, state=True):
+        self._changed = state
+
+    def setHtml(self, html):
+        QtGui.QTextEdit.setHtml(self, html)
+        self._changed = False
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
@@ -25,16 +59,16 @@ class Ui_MainWindow(object):
         self.tabWidget.setObjectName(_fromUtf8("tabWidget"))
         self.Tab1 = QtGui.QWidget()
         self.Tab1.setObjectName(_fromUtf8("Tab1"))
-        self.Board = QtGui.QTextEdit(self.Tab1)
+        self.Board = TextEdit(self.Tab1)
         self.Board.setGeometry(QtCore.QRect(10, 10, 561, 191))
         self.Board.setObjectName(_fromUtf8("Board"))
-        self.appointment1 = QtGui.QTextEdit(self.Tab1)
+        self.appointment1 = TextEdit(self.Tab1)
         self.appointment1.setGeometry(QtCore.QRect(10, 260, 181, 151))
         self.appointment1.setObjectName(_fromUtf8("appointment1"))
-        self.appointment2 = QtGui.QTextEdit(self.Tab1)
+        self.appointment2 = TextEdit(self.Tab1)
         self.appointment2.setGeometry(QtCore.QRect(200, 260, 181, 151))
         self.appointment2.setObjectName(_fromUtf8("appointment2"))
-        self.appointment3 = QtGui.QTextEdit(self.Tab1)
+        self.appointment3 = TextEdit(self.Tab1)
         self.appointment3.setGeometry(QtCore.QRect(390, 260, 181, 151))
         self.appointment3.setObjectName(_fromUtf8("appointment3"))
         self.EditBoardButton = QtGui.QPushButton(self.Tab1)

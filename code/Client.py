@@ -86,10 +86,10 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.actionLogout.triggered.connect(self.logout)
         self.actionRefresh.triggered.connect(self.refresh)
         self.loginDlgUI.buttonBox.accepted.connect(self.login)
-        self.EditBoardButton.clicked.connect(self.editBoard)
-        self.EditAppointment1Button.clicked.connect(self.editAppointment1)
-        self.EditAppointment2Button.clicked.connect(self.editAppointment2)
-        self.EditAppointment3Button.clicked.connect(self.editAppointment3)
+        self.Board.editingFinished.connect(self.editBoard)
+        self.appointment1.editingFinished.connect(self.editAppointment1)
+        self.appointment2.editingFinished.connect(self.editAppointment2)
+        self.appointment3.editingFinished.connect(self.editAppointment3)
 
         self.loginDlgUI.paswordEdit.setEchoMode(QLineEdit.Password)
 
