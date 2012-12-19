@@ -13,6 +13,8 @@ import time
 from UI_Client import Ui_MainWindow
 from UI_Login import Ui_Login
 from threading import RLock
+import cPickle
+import hashlib
 
 import sys
 reload(sys)
@@ -97,8 +99,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.MessagePort = MESSAGEPORT
         self.FileHost = FILEHOST
         self.FilePort = FILEPORT
-        self.username = None
-        self.password = None
+        self.user = None
         self.MessageSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.MessageSocket.connect((self.MessageHost, self.MessagePort))
@@ -113,9 +114,12 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.loginDlg.show()
 
     def login(self):
-        self.username = str(self.loginDlgUI.usernameEdit.text())
-        self.password = str(self.loginDlgUI.paswordEdit.text())
-        self.MessageSocket.sendall("login %s %s\r\n" % (self.username, self.password))
+        username = str(self.loginDlgUI.usernameEdit.text())
+        password = str(self.loginDlgUI.paswordEdit.text())
+        m = hashlib.md5()
+        m.update(password)
+        m.update("salt")
+        self.MessageSocket.sendall("login %s %s\r\n" % (username, m.hexdigest()))
         self.loginDlgUI.usernameEdit.setText("")
         self.loginDlgUI.paswordEdit.setText("")
         self.loginDlg.close()
@@ -127,29 +131,32 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
     def display(self):
         global msgLst
         msgLock.acquire()
-        msgs = ("".join(m for m in msgLst).decode("utf-8")).split("\r\n")
+        msgs = ("".join(m for m in msgLst)).split("\r\n")
         msgLst = []
         msgLock.release()
         #msgs = self.th.message.decode('utf-8').split("\r\n")
         for msg in msgs:
             if msg.startswith("board"):
                 cmd, content = msg.split(' ', 1)
-                self.Board.setText(content)
+                self.Board.setText(content.decode("utf-8"))
             elif msg.startswith("appointment"):
                 cmd, index, appt = msg.split(' ', 2)
                 if index == '0':
-                    self.appointment1.setText(appt)
+                    self.appointment1.setText(appt.decode("utf-8"))
                 elif index == '1':
-                    self.appointment2.setText(appt)
+                    self.appointment2.setText(appt.decode("utf-8"))
                 elif index == '2':
-                    self.appointment3.setText(appt)
+                    self.appointment3.setText(appt.decode("utf-8"))
             elif msg.startswith("user"):
                 userList = msg.split(' ')[1:]
                 self.NameList.clear()
                 for user in userList:
                     self.NameList.addItem(user)
+            elif msg.startswith("account"):
+                cmd, content = msg.split(' ', 1)
+                self.user = cPickle.loads(content)
             elif msg:
-                self.ChatBrowser.append(msg+"\n")
+                self.ChatBrowser.append(msg.decode("utf-8")+"\n")
 
     def editBoard(self):
         board = str(self.Board.toPlainText()).decode("utf-8")

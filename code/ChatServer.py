@@ -1,30 +1,29 @@
+# -*- coding: utf-8 -*-
 from asyncore import dispatcher
 from asynchat import async_chat
 import socket
 import asyncore
 import time
+import cPickle
 
 PORT = 50000
 NAME = "CodeCafe"
 
-class User(object):
-	def __init__(self, name, pwd, isAdmin=False):
-		self.name = name
-		self.pwd = pwd
-		self.state = "offline"
-		self.isAdmin = isAdmin
-	def setPassword(self, newpwd):
-		self.pwd = newpwd
-	def setState(self, newstate):
-		self.state = newstate
+UserLst = []
+usrDB = open("userdata", "rb")
+while 1:
+	try:
+		UserLst.append(cPickle.load(usrDB))
+	except EOFError:
+		break
+usrDB.close()
+UserDict = dict([(u["username"], u) for u in UserLst])
 
-UserDict = dict([(u.name, u) for u in
-			[
-            User("guyuhao", "tbontb", True),
-            User("linyiyang", "123456", True),
-            User("hongyan", "hongyan"),
-            User("wanglang", "wanglang")
-            ]])
+def writeUserData(userlst):
+	ouf = open("userdata", "wb")
+	for user in userlst:
+		cPickle.dump(user, ouf, 2)
+	ouf.close()
 
 class EndSession(Exception):
 	pass
@@ -79,10 +78,11 @@ class LoginRoom(Room):
 
 	def do_login(self, session, line):
 		name, pwd = line.strip().split(' ')
-		if name in UserDict and UserDict[name].pwd == pwd:
+		if name in UserDict and UserDict[name]["password"] == pwd:
 			if not name in self.server.users:
 				session.user = UserDict[name]
 				session.push("Welcome, %s\r\n" % name)
+				session.push("account %s \r\n" % cPickle.dumps(session.user, 2))
 				session.enter(self.server.main_room)
 			else:
 				session.push("The user %s is already online!\r\n" % name)
@@ -92,18 +92,18 @@ class LoginRoom(Room):
 class ChatRoom(Room):
 
 	def add(self, session):
-		self.broadcast(session.user.name+ " has enter the room.\r\n")
-		self.server.users[session.user.name] = session
+		self.broadcast(session.user["username"]+ " has enter the room.\r\n")
+		self.server.users[session.user["username"]] = session
 		Room.add(self, session)
 
 	def remove(self, session):
 		Room.remove(self, session)
-		self.broadcast(session.user.name + " has left the room.\r\n")
+		self.broadcast(session.user["username"] + " has left the room.\r\n")
 
 	def do_say(self, session, line):
 		dst, msg = line.split(' ', 1)
 		nowtime = time.strftime('%H:%M:%S')
-		msgPkg = nowtime + ' ' + session.user.name + " to " + dst + ": \n" + msg + "\r\n"
+		msgPkg = nowtime + ' ' + session.user["username"] + " to " + dst + ": \n" + msg + "\r\n"
 		if dst == "-all":
 			self.broadcast(msgPkg)
 		else:
@@ -115,7 +115,7 @@ class ChatRoom(Room):
 				session.push("No such person online.\r\n")
 
 	def do_editBoard(self, session, line):
-		if session.user.isAdmin:
+		if session.user["isAdmin"]:
 			self.server.board = line
 			self.broadcast("board " + line + "\r\n")
 		else:
@@ -123,7 +123,7 @@ class ChatRoom(Room):
 
 	def do_editAppointment(self, session, line):
 		index, content = line.split(' ', 1)
-		if session.user.isAdmin:
+		if session.user["isAdmin"]:
 			self.server.appointments[int(index)] = content
 			self.broadcast("appointment " + line + "\r\n")
 		else:
@@ -138,7 +138,7 @@ class ChatRoom(Room):
 	def do_look(self, session, line):
 		session.push("The following are in this room:\r\n")
 		for other in self.sessions:
-			session.push(other.user.name + "\r\n")
+			session.push(other.user["username"] + "\r\n")
 
 	def do_who(self, session, line):
 		session.push("The following are logged in:\r\n")
@@ -149,7 +149,7 @@ class LogoutRoom(Room):
 
 	def add(self, session):
 		try:
-			del self.server.users[session.user.name]
+			del self.server.users[session.user["username"]]
 		except KeyError:
 			pass
 
