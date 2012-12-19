@@ -118,6 +118,7 @@ class ChatRoom(Room):
 		if session.user["isAdmin"]:
 			self.server.board = line
 			self.broadcast("board " + line + "\r\n")
+			self.server.writeBoards()
 		else:
 			session.push("error You don't have permission.\r\n")
 
@@ -126,6 +127,7 @@ class ChatRoom(Room):
 		if session.user["isAdmin"]:
 			self.server.appointments[int(index)] = content
 			self.broadcast("appointment " + line + "\r\n")
+			self.server.writeBoards()
 		else:
 			session.push("error You don't have permission.\r\n")
 
@@ -197,15 +199,23 @@ class MessageServer(dispatcher):
 		self.bind(('', port))
 		self.listen(5)
 		self.name = name
-		self.board = ""
-		self.appointments = ["", "", ""]
+		inf = open('boards', 'rb')
+		self.board = cPickle.load(inf)
+		self.appointments = cPickle.load(inf)
+		inf.close()
 		self.users = {}
 		self.main_room = ChatRoom(self)
-		print "sucess initialize ChatServer."
+		print "Successfully initialize MessageServer."
 
 	def handle_accept(self):
 		connetion, addr = self.accept()
 		ChatSession(self, connetion)
+
+	def writeBoards(self):
+		ouf = open("boards", "wb")
+		cPickle.dump(self.board, ouf, 2)
+		cPickle.dump(self.appointments, ouf, 2)
+		ouf.close()
 
 if __name__ == '__main__':
 	s = MessageServer(PORT, NAME)

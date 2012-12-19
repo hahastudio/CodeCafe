@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import cPickle
 import hashlib
 
@@ -7,6 +8,8 @@ UserLst = [
 			{"username": "hongyan", "password": "hongyan", "isAdmin": False},
 			{"username": "wanglang", "password": "wanglang", "isAdmin": False}
 ]
+board = ""
+appts = ["", "", ""]
 
 ouf = open('userdata', 'wb')
 for user in UserLst:
@@ -17,6 +20,11 @@ for user in UserLst:
 	cPickle.dump(user, ouf, 2)
 ouf.close()
 
+ouf = open('boards', 'wb')
+cPickle.dump(board, ouf, 2)
+cPickle.dump(appts, ouf, 2)
+ouf.close()
+
 inf = open('userdata', 'rb')
 while 1:
 	try:
@@ -24,4 +32,9 @@ while 1:
 		print a
 	except EOFError:
 		break
+inf.close()
+
+inf = open('boards', 'rb')
+print cPickle.load(inf)
+print cPickle.load(inf)
 inf.close()

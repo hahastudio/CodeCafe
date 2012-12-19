@@ -119,7 +119,8 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         m = hashlib.md5()
         m.update(password)
         m.update("salt")
-        self.MessageSocket.sendall("login %s %s\r\n" % (username, m.hexdigest()))
+        if username and password:
+            self.MessageSocket.sendall("login %s %s\r\n" % (username, m.hexdigest()))
         self.loginDlgUI.usernameEdit.setText("")
         self.loginDlgUI.paswordEdit.setText("")
         self.loginDlg.close()
@@ -160,19 +161,23 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
 
     def editBoard(self):
         board = str(self.Board.toPlainText()).decode("utf-8")
-        self.MessageSocket.sendall("editBoard %s\r\n" % board)
+        if board:
+            self.MessageSocket.sendall("editBoard %s\r\n" % board)
 
     def editAppointment1(self):
         appointment1 = str(self.appointment1.toPlainText()).decode("utf-8")
-        self.MessageSocket.sendall("editAppointment 0 %s\r\n" % appointment1)
+        if appointment1:
+            self.MessageSocket.sendall("editAppointment 0 %s\r\n" % appointment1)
 
     def editAppointment2(self):
         appointment2 = str(self.appointment2.toPlainText()).decode("utf-8")
-        self.MessageSocket.sendall("editAppointment 1 %s\r\n" % appointment2)
+        if appointment2:
+            self.MessageSocket.sendall("editAppointment 1 %s\r\n" % appointment2)
 
     def editAppointment3(self):
         appointment3 = str(self.appointment3.toPlainText()).decode("utf-8")
-        self.MessageSocket.sendall("editAppointment 2 %s\r\n" % appointment3)
+        if appointment3:
+            self.MessageSocket.sendall("editAppointment 2 %s\r\n" % appointment3)
 
     def sendMsg(self):
         txt = self.ChatEdit.toPlainText()
