@@ -81,13 +81,14 @@ class LoginRoom(Room):
 		if name in UserDict and UserDict[name]["password"] == pwd:
 			if not name in self.server.users:
 				session.user = UserDict[name]
-				session.push("Welcome, %s\r\n" % name)
+				session.push("success login\r\n")
+				session.push("Welcome, %s!\r\n" % name)
 				session.push("account %s \r\n" % cPickle.dumps(session.user, 2))
 				session.enter(self.server.main_room)
 			else:
 				session.push("The user %s is already online!\r\n" % name)
 		else:
-			session.push("unknown user name or bad password.\r\n")
+			session.push("error Unknown user name or bad password.\r\n")
 
 class ChatRoom(Room):
 

@@ -76,12 +76,12 @@ class ThreadRefresh(QtCore.QThread):
     def __init__(self, s):
         super(ThreadRefresh, self).__init__()
         self.s = s
+        self.runable = True
         
     def run(self):
-        while 1:
-            time.sleep(10)
+        while self.runable:
             self.s.sendall("refresh\r\n")
-            print "refreshed"
+            time.sleep(10)
 
 
 class ClientWindow(QMainWindow, Ui_MainWindow):
@@ -134,17 +134,20 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         m.update(password)
         m.update("salt")
         if username and password:
-            self.MessageSocket.sendall("login %s %s\r\n" % (username, m.hexdigest()))
+            try:
+                self.MessageSocket.sendall("login %s %s\r\n" % (username, m.hexdigest()))
+            except socket.error:
+                self.MessageSocket.connect((self.MessageHost, self.MessagePort))
+                self.threcv = ThreadRecv(self.MessageSocket)
+                self.threcv.start()
+                self.MessageSocket.sendall("login %s %s\r\n" % (username, m.hexdigest()))
         self.loginDlgUI.usernameEdit.setText("")
         self.loginDlgUI.paswordEdit.setText("")
         self.loginDlg.close()
-        self.refresh()
-        self.threfresh = ThreadRefresh(self.MessageSocket)
-        self.threfresh.start()
 
     def logout(self):
         self.MessageSocket.sendall("logout\r\n")
-        self.threfresh.quit()
+        self.threfresh.runable = False
 
     def display(self):
         global msgLst
@@ -173,6 +176,15 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             elif msg.startswith("account"):
                 cmd, content = msg.split(' ', 1)
                 self.user = cPickle.loads(content)
+            elif msg.startswith("success"):
+                cmd, content = msg.split(' ', 1)
+                if content == "login":
+                    self.threfresh = ThreadRefresh(self.MessageSocket)
+                    self.threfresh.start()
+            elif msg.startswith("error"):
+                cmd, content = msg.split(' ', 1)
+                reply = QtGui.QMessageBox.information(self,
+                    cmd, content)
             elif msg:
                 self.ChatBrowser.append(msg.decode("utf-8")+"\n")
 
