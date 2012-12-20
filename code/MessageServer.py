@@ -138,6 +138,15 @@ class ChatRoom(Room):
 			session.push("appointment %d %s\r\n" % (i, content))
 		session.push("user " + ' '.join(name for name in self.server.users) + "\r\n")
 
+	def do_setpwd(self, session, line):
+		usrdata = cPickle.loads(line)
+		if session.user["username"] == usrdata["username"]:
+			session.user = usrdata
+			UserDict[usrdata["username"]] = usrdata
+			writeUserData(UserDict.values())
+		else:
+			session.push("error You can't set other user's password!\r\n")
+
 	def do_look(self, session, line):
 		session.push("The following are in this room:\r\n")
 		for other in self.sessions:

@@ -3,18 +3,22 @@
 """
 所有导入的模块
 """
+
+import socket
+import re
+import time
+from threading import RLock
+import cPickle
+import hashlib
+
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QMainWindow, QLineEdit
 from PyQt4.QtCore import pyqtSignature
 from PyQt4.QtCore import QTextCodec
-import socket
-import re
-import time
+
 from UI_Client import Ui_MainWindow
 from UI_Login import Ui_Login
-from threading import RLock
-import cPickle
-import hashlib
+from UI_Pwd import Ui_Pwd
 
 import sys
 reload(sys)
@@ -24,20 +28,9 @@ MESSAGEHOST = "localhost"
 MESSAGEPORT = 50000
 FILEHOST = "localhost"
 FILEPORT = 50001
+SALT = "salt"
 msgLock = RLock()
 msgLst = []
-
-def getip():
-    """
-    getip()
-    使用socket模块中的gethostbyname_ex(hostname)函数，
-    返回非192开头的ipv4地址，即公网地址，因此要求服务器必须连在公网上。
-    """
-    names, aliases, ips = socket.gethostbyname_ex(socket.gethostname())
-    for ip in ips :
-        if not re.match('^192', ip):
-            return ip
-    return ips[0]
 
 class ThreadRecv(QtCore.QThread):
     """
@@ -95,18 +88,27 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.loginDlg = QtGui.QDialog()
         self.loginDlgUI = Ui_Login()
         self.loginDlgUI.setupUi(self.loginDlg)
+        self.pwdDlg = QtGui.QDialog()
+        self.pwdDlgUI = Ui_Pwd()
+        self.pwdDlgUI.setupUi(self.pwdDlg)
+
         #connect functions
         self.sendButton.clicked.connect(self.sendMsg)
         self.actionLogin.triggered.connect(self.openLoginDlg)
         self.actionLogout.triggered.connect(self.logout)
         self.actionRefresh.triggered.connect(self.refresh)
-        self.loginDlgUI.buttonBox.accepted.connect(self.login)
+        self.actionSetPwd.triggered.connect(self.openPwdDlg)
         self.Board.editingFinished.connect(self.editBoard)
         self.appointment1.editingFinished.connect(self.editAppointment1)
         self.appointment2.editingFinished.connect(self.editAppointment2)
         self.appointment3.editingFinished.connect(self.editAppointment3)
 
+        self.loginDlgUI.buttonBox.accepted.connect(self.login)
         self.loginDlgUI.paswordEdit.setEchoMode(QLineEdit.Password)
+        self.pwdDlgUI.buttonBox.accepted.connect(self.setpwd)
+        self.pwdDlgUI.cPwdEdit.setEchoMode(QLineEdit.Password)
+        self.pwdDlgUI.nPwdEdit.setEchoMode(QLineEdit.Password)
+        self.pwdDlgUI.nPwdEdit_2.setEchoMode(QLineEdit.Password)
 
         self.MessageHost = MESSAGEHOST
         self.MessagePort = MESSAGEPORT
@@ -127,12 +129,15 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
     def openLoginDlg(self):
         self.loginDlg.show()
 
+    def openPwdDlg(self):
+        self.pwdDlg.show()
+
     def login(self):
         username = str(self.loginDlgUI.usernameEdit.text())
         password = str(self.loginDlgUI.paswordEdit.text())
         m = hashlib.md5()
         m.update(password)
-        m.update("salt")
+        m.update(SALT)
         if username and password:
             try:
                 self.MessageSocket.sendall("login %s %s\r\n" % (username, m.hexdigest()))
@@ -148,6 +153,31 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
     def logout(self):
         self.MessageSocket.sendall("logout\r\n")
         self.threfresh.runable = False
+
+    def setpwd(self):
+        cPwd = str(self.pwdDlgUI.cPwdEdit.text())
+        nPwd = str(self.pwdDlgUI.nPwdEdit.text())
+        nPwd_2 = str(self.pwdDlgUI.nPwdEdit_2.text())
+        cMD5 = hashlib.md5()
+        cMD5.update(cPwd)
+        cMD5.update(SALT)
+        cHex = cMD5.hexdigest()
+        if cHex == self.user["password"]:
+            if nPwd == nPwd_2:
+                nMD5 = hashlib.md5()
+                nMD5.update(nPwd)
+                nMD5.update(SALT)
+                nHex = nMD5.hexdigest()
+                self.user["password"] = nHex
+                self.MessageSocket.sendall("setpwd %s\r\n" % cPickle.dumps(self.user, 2))
+                self.pwdDlg.close()
+            else:
+                reply = QtGui.QMessageBox.information(self, "error", "Please input same new password twice.")
+        else:
+            reply = QtGui.QMessageBox.information(self, "error", "Current password incorrect.")
+        self.pwdDlgUI.cPwdEdit.setText("")
+        self.pwdDlgUI.nPwdEdit.setText("")
+        self.pwdDlgUI.nPwdEdit_2.setText("")
 
     def display(self):
         global msgLst
@@ -183,8 +213,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
                     self.threfresh.start()
             elif msg.startswith("error"):
                 cmd, content = msg.split(' ', 1)
-                reply = QtGui.QMessageBox.information(self,
-                    cmd, content)
+                reply = QtGui.QMessageBox.information(self, cmd, content)
             elif msg:
                 self.ChatBrowser.append(msg.decode("utf-8")+"\n")
 
