@@ -228,9 +228,17 @@
     </property>
     <addaction name="actionLogin"/>
     <addaction name="actionLogout"/>
+    <addaction name="actionSetPwd"/>
+   </widget>
+   <widget class="QMenu" name="menuProject">
+    <property name="title">
+     <string>Project</string>
+    </property>
+    <addaction name="actionSetPath"/>
     <addaction name="actionRefresh"/>
    </widget>
    <addaction name="menu"/>
+   <addaction name="menuProject"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionLogin">
@@ -246,9 +254,19 @@
     <string>Logout</string>
    </property>
   </action>
+  <action name="actionSetPwd">
+   <property name="text">
+    <string>Set Password</string>
+   </property>
+  </action>
+  <action name="actionSetPath">
+   <property name="text">
+    <string>Set Path</string>
+   </property>
+  </action>
   <action name="actionRefresh">
    <property name="text">
-    <string>refresh</string>
+    <string>Refresh</string>
    </property>
   </action>
  </widget>

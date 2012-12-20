@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UI_Client.ui'
 #
-# Created: Fri Dec 14 11:11:19 2012
+# Created: Thu Dec 20 16:42:28 2012
 #      by: PyQt4 UI code generator 4.8.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -117,6 +117,8 @@ class Ui_MainWindow(object):
         self.menubar.setObjectName(_fromUtf8("menubar"))
         self.menu = QtGui.QMenu(self.menubar)
         self.menu.setObjectName(_fromUtf8("menu"))
+        self.menuProject = QtGui.QMenu(self.menubar)
+        self.menuProject.setObjectName(_fromUtf8("menuProject"))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtGui.QStatusBar(MainWindow)
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
@@ -125,12 +127,19 @@ class Ui_MainWindow(object):
         self.actionLogin.setObjectName(_fromUtf8("actionLogin"))
         self.actionLogout = QtGui.QAction(MainWindow)
         self.actionLogout.setObjectName(_fromUtf8("actionLogout"))
+        self.actionSetPwd = QtGui.QAction(MainWindow)
+        self.actionSetPwd.setObjectName(_fromUtf8("actionSetPwd"))
+        self.actionSetPath = QtGui.QAction(MainWindow)
+        self.actionSetPath.setObjectName(_fromUtf8("actionSetPath"))
         self.actionRefresh = QtGui.QAction(MainWindow)
         self.actionRefresh.setObjectName(_fromUtf8("actionRefresh"))
         self.menu.addAction(self.actionLogin)
         self.menu.addAction(self.actionLogout)
-        self.menu.addAction(self.actionRefresh)
+        self.menu.addAction(self.actionSetPwd)
+        self.menuProject.addAction(self.actionSetPath)
+        self.menuProject.addAction(self.actionRefresh)
         self.menubar.addAction(self.menu.menuAction())
+        self.menubar.addAction(self.menuProject.menuAction())
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(1)
@@ -148,8 +157,11 @@ class Ui_MainWindow(object):
         self.OpenFileButton.setText(QtGui.QApplication.translate("MainWindow", "Open", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Tab3), QtGui.QApplication.translate("MainWindow", "File", None, QtGui.QApplication.UnicodeUTF8))
         self.menu.setTitle(QtGui.QApplication.translate("MainWindow", "User", None, QtGui.QApplication.UnicodeUTF8))
+        self.menuProject.setTitle(QtGui.QApplication.translate("MainWindow", "Project", None, QtGui.QApplication.UnicodeUTF8))
         self.actionLogin.setText(QtGui.QApplication.translate("MainWindow", "Login", None, QtGui.QApplication.UnicodeUTF8))
         self.actionLogout.setText(QtGui.QApplication.translate("MainWindow", "Logout", None, QtGui.QApplication.UnicodeUTF8))
         self.actionLogout.setToolTip(QtGui.QApplication.translate("MainWindow", "Logout", None, QtGui.QApplication.UnicodeUTF8))
-        self.actionRefresh.setText(QtGui.QApplication.translate("MainWindow", "refresh", None, QtGui.QApplication.UnicodeUTF8))
+        self.actionSetPwd.setText(QtGui.QApplication.translate("MainWindow", "Set Password", None, QtGui.QApplication.UnicodeUTF8))
+        self.actionSetPath.setText(QtGui.QApplication.translate("MainWindow", "Set Path", None, QtGui.QApplication.UnicodeUTF8))
+        self.actionRefresh.setText(QtGui.QApplication.translate("MainWindow", "Refresh", None, QtGui.QApplication.UnicodeUTF8))
 
