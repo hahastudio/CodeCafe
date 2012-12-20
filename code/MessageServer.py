@@ -71,10 +71,10 @@ class LoginRoom(Room):
 
 	def add(self, session):
 		Room.add(self, session)
-		self.broadcast("Welcome to %s\r\n" % self.server.name)
+		#self.broadcast("Welcome to %s\r\n" % self.server.name)
 
 	def unknown(self, session, cmd):
-		session.push("Please log in\nUse 'login <nick>'\r\n")
+		session.push("Please log in.\r\n")
 
 	def do_login(self, session, line):
 		name, pwd = line.strip().split(' ')
@@ -147,6 +147,13 @@ class ChatRoom(Room):
 		for name in self.server.users:
 			session.push(name + "\r\n")
 
+	def do_logout(self, session, line):
+		try:
+			del self.server.users[session.user["username"]]
+		except KeyError:
+			pass		
+		session.enter(session.loginroom)
+
 class LogoutRoom(Room):
 
 	def add(self, session):
@@ -163,7 +170,8 @@ class ChatSession(async_chat):
 		self.set_terminator("\r\n")
 		self.data = []
 		self.user = None
-		self.enter(LoginRoom(server))
+		self.loginroom = LoginRoom(server)
+		self.enter(self.loginroom)
 
 	def enter(self, room):
 		try:

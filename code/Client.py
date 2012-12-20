@@ -39,7 +39,7 @@ def getip():
             return ip
     return ips[0]
 
-class Thread2(QtCore.QThread):
+class ThreadRecv(QtCore.QThread):
     """
     Qt模块下QThread的子类，用于管理socket的连接线程，使发送与接收互不干扰。
     客户端使用该线程2。
@@ -50,7 +50,7 @@ class Thread2(QtCore.QThread):
         __init__(self, s)
         初始化实例，接收服务器socket对象s，
         """
-        super(Thread2, self).__init__()
+        super(ThreadRecv, self).__init__()
         self.s = s
         #self.message = ""
 
@@ -70,6 +70,19 @@ class Thread2(QtCore.QThread):
                 self.pressed.emit()
             #else:
                 #self.message = self.message
+
+class ThreadRefresh(QtCore.QThread):
+    """docstring for ThreadRefresh"""
+    def __init__(self, s):
+        super(ThreadRefresh, self).__init__()
+        self.s = s
+        
+    def run(self):
+        while 1:
+            time.sleep(10)
+            self.s.sendall("refresh\r\n")
+            print "refreshed"
+
 
 class ClientWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent = None):
@@ -100,12 +113,13 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.FileHost = FILEHOST
         self.FilePort = FILEPORT
         self.user = None
+        self.threfresh = None
         self.MessageSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.MessageSocket.connect((self.MessageHost, self.MessagePort))
-            self.th = Thread2(self.MessageSocket)
-            self.th.start()
-            QtCore.QObject.connect(self.th, QtCore.SIGNAL("pressed()"), self.display)
+            self.threcv = ThreadRecv(self.MessageSocket)
+            self.threcv.start()
+            QtCore.QObject.connect(self.threcv, QtCore.SIGNAL("pressed()"), self.display)
             self.ChatBrowser.append('连接到%s : %d'.decode('utf-8') % (self.MessageHost, self.MessagePort))
         except socket.error:
             self.ChatBrowser.append('连接%s : %d失败'.decode('utf-8') % (self.MessageHost, self.MessagePort))
@@ -125,9 +139,12 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.loginDlgUI.paswordEdit.setText("")
         self.loginDlg.close()
         self.refresh()
+        self.threfresh = ThreadRefresh(self.MessageSocket)
+        self.threfresh.start()
 
     def logout(self):
         self.MessageSocket.sendall("logout\r\n")
+        self.threfresh.quit()
 
     def display(self):
         global msgLst
@@ -135,7 +152,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         msgs = ("".join(m for m in msgLst)).split("\r\n")
         msgLst = []
         msgLock.release()
-        #msgs = self.th.message.decode('utf-8').split("\r\n")
+        #msgs = self.threcv.message.decode('utf-8').split("\r\n")
         for msg in msgs:
             if msg.startswith("board"):
                 cmd, content = msg.split(' ', 1)
