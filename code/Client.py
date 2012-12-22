@@ -3,13 +3,15 @@
 """
 所有导入的模块
 """
-
 import socket
 import re
 import time
 from threading import RLock
 import cPickle
 import hashlib
+import os
+import glob
+from collections import deque
 
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QMainWindow, QLineEdit
@@ -19,6 +21,7 @@ from PyQt4.QtCore import QTextCodec
 from UI_Client import Ui_MainWindow
 from UI_Login import Ui_Login
 from UI_Pwd import Ui_Pwd
+from UI_Path import Ui_Path
 
 import sys
 reload(sys)
@@ -31,6 +34,14 @@ FILEPORT = 50001
 SALT = "salt"
 msgLock = RLock()
 msgLst = []
+fqueLock = RLock()
+fque = deque()
+fthLst = []
+
+def all_files(pattern, search_path, pathsep=os.pathsep):
+    for path in search_path.split(pathsep):
+        for match in glob.glob(os.path.join(path, pattern)):
+            yield match
 
 class ThreadRecv(QtCore.QThread):
     """
@@ -57,9 +68,8 @@ class ThreadRecv(QtCore.QThread):
             msg = self.s.recv(1024)
             if msg != "":
                 #self.message = msg
-                msgLock.acquire()
-                msgLst.append(msg)
-                msgLock.release()
+                with msgLock:
+                    msgLst.append(msg)
                 self.pressed.emit()
             #else:
                 #self.message = self.message
@@ -74,8 +84,58 @@ class ThreadRefresh(QtCore.QThread):
     def run(self):
         while self.runable:
             self.s.sendall("refresh\r\n")
+            self.s.sendall("filerequest\r\n")
+            with fqueLock:
+                fque.append(("refresh", ))
             time.sleep(10)
 
+class ThreadFileRefresh(QtCore.QThread):
+    """docstring for ThreadFileRefresh"""
+    def __init__(self, fcode):
+        super(ThreadFileRefresh, self).__init__()
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.fcode = fcode
+
+    def run(self):
+        self.s.connect((FILEHOST, FILEPORT))
+        self.s.sendall("fileaccess %s\r\n" % self.fcode)
+        m = ""
+        while not m:
+            m = self.s.recv(1024)
+        if m.startswith("info"):
+            self.s.sendall("refresh\r\n")
+            m = self.s.recv(1024)
+            while not m.startswith("endlist"):
+                print cPickle.loads(m), 1
+        self.s.close()
+
+class ThreadFileUpload(QtCore.QThread):
+    """docstring for ThreadFileRefresh"""
+    def __init__(self, fcode, f, username):
+        super(ThreadFileUpload, self).__init__()
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.fcode = fcode
+        self.f = f
+        self.username = username
+
+    def run(self):
+        self.s.connect((FILEHOST, FILEPORT))
+        self.s.sendall("fileaccess %s\r\n" % self.fcode)
+        m = ""
+        while not m:
+            m = self.s.recv(1024)
+        if m.startswith("info"):
+            self.s.sendall("upload %s %s\r\n" % (os.path.split(self.f)[1], self.username))
+            upf = open(self.f, "rb")
+            while True:                       
+                data = upf.read(1024)                                         
+                if not data:   
+                    break  
+                while len(data) > 0:   
+                    intSent = self.s.send(data)   
+                    data = data[intSent:]
+            upf.close()
+        self.s.close()
 
 class ClientWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent = None):
@@ -91,6 +151,9 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.pwdDlg = QtGui.QDialog()
         self.pwdDlgUI = Ui_Pwd()
         self.pwdDlgUI.setupUi(self.pwdDlg)
+        self.pathDlg = QtGui.QDialog()
+        self.pathDlgUI = Ui_Path()
+        self.pathDlgUI.setupUi(self.pathDlg)
 
         #connect functions
         self.sendButton.clicked.connect(self.sendMsg)
@@ -98,10 +161,12 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.actionLogout.triggered.connect(self.logout)
         self.actionRefresh.triggered.connect(self.refresh)
         self.actionSetPwd.triggered.connect(self.openPwdDlg)
+        self.actionSetPath.triggered.connect(self.openPathDlg)
         self.Board.editingFinished.connect(self.editBoard)
         self.appointment1.editingFinished.connect(self.editAppointment1)
         self.appointment2.editingFinished.connect(self.editAppointment2)
         self.appointment3.editingFinished.connect(self.editAppointment3)
+        self.uploadButton.clicked.connect(self.uploadFile)
 
         self.loginDlgUI.buttonBox.accepted.connect(self.login)
         self.loginDlgUI.paswordEdit.setEchoMode(QLineEdit.Password)
@@ -110,27 +175,28 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.pwdDlgUI.nPwdEdit.setEchoMode(QLineEdit.Password)
         self.pwdDlgUI.nPwdEdit_2.setEchoMode(QLineEdit.Password)
 
-        self.MessageHost = MESSAGEHOST
-        self.MessagePort = MESSAGEPORT
-        self.FileHost = FILEHOST
-        self.FilePort = FILEPORT
         self.user = None
         self.threfresh = None
+        self.path = None
+        self.patterns = []
         self.MessageSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            self.MessageSocket.connect((self.MessageHost, self.MessagePort))
+            self.MessageSocket.connect((MESSAGEHOST, MESSAGEPORT))
             self.threcv = ThreadRecv(self.MessageSocket)
             self.threcv.start()
             QtCore.QObject.connect(self.threcv, QtCore.SIGNAL("pressed()"), self.display)
-            self.ChatBrowser.append('连接到%s : %d'.decode('utf-8') % (self.MessageHost, self.MessagePort))
+            self.ChatBrowser.append('连接到%s : %d'.decode('utf-8') % (MESSAGEHOST, MESSAGEPORT))
         except socket.error:
-            self.ChatBrowser.append('连接%s : %d失败'.decode('utf-8') % (self.MessageHost, self.MessagePort))
+            self.ChatBrowser.append('连接%s : %d失败'.decode('utf-8') % (MESSAGEHOST, MESSAGEPORT))
 
     def openLoginDlg(self):
         self.loginDlg.show()
 
     def openPwdDlg(self):
         self.pwdDlg.show()
+
+    def openPathDlg(self):
+        self.pathDlg.show()
 
     def login(self):
         username = str(self.loginDlgUI.usernameEdit.text())
@@ -142,7 +208,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             try:
                 self.MessageSocket.sendall("login %s %s\r\n" % (username, m.hexdigest()))
             except socket.error:
-                self.MessageSocket.connect((self.MessageHost, self.MessagePort))
+                self.MessageSocket.connect((MESSAGEHOST, MESSAGEPORT))
                 self.threcv = ThreadRecv(self.MessageSocket)
                 self.threcv.start()
                 self.MessageSocket.sendall("login %s %s\r\n" % (username, m.hexdigest()))
@@ -181,10 +247,9 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
 
     def display(self):
         global msgLst
-        msgLock.acquire()
-        msgs = ("".join(m for m in msgLst)).split("\r\n")
-        msgLst = []
-        msgLock.release()
+        with msgLock:
+            msgs = ("".join(m for m in msgLst)).split("\r\n")
+            msgLst = []
         #msgs = self.threcv.message.decode('utf-8').split("\r\n")
         for msg in msgs:
             if msg.startswith("board"):
@@ -206,6 +271,22 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             elif msg.startswith("account"):
                 cmd, content = msg.split(' ', 1)
                 self.user = cPickle.loads(content)
+            elif msg.startswith("fcode"):
+                cmd, fcode = msg.split(' ', 1)
+                print fcode
+                with fqueLock:
+                    try:
+                        freq = fque.popleft()
+                        if freq[0] == "refresh":
+                            t = ThreadFileRefresh(fcode)
+                            fthLst.append(t)
+                            t.start()
+                        elif freq[0] == "upload":
+                            t = ThreadFileUpload(fcode, freq[1], freq[2])
+                            fthLst.append(t)
+                            t.start()
+                    except IndexError:
+                        pass
             elif msg.startswith("success"):
                 cmd, content = msg.split(' ', 1)
                 if content == "login":
@@ -245,9 +326,14 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
 
     def refresh(self):
         self.MessageSocket.sendall("refresh\r\n")
+        self.MessageSocket.sendall("filerequest\r\n")
+        with fqueLock:
+            fque.append(("refresh", ))
 
     def uploadFile(self):
-        pass
+        self.MessageSocket.sendall("filerequest\r\n")
+        with fqueLock:
+            fque.append(("upload", r"C:\ludashi.txt", self.user["username"]))
 
     def downloadFile(self):
         pass

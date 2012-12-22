@@ -5,8 +5,10 @@ import socket
 import asyncore
 import time
 import cPickle
+import threading
 
 PORT = 50000
+FSPORT = 49999
 NAME = "CodeCafe"
 
 UserLst = []
@@ -19,11 +21,37 @@ while 1:
 usrDB.close()
 UserDict = dict([(u["username"], u) for u in UserLst])
 
+fLock = threading.RLock()
+fcode = ""
+
 def writeUserData(userlst):
 	ouf = open("userdata", "wb")
 	for user in userlst:
 		cPickle.dump(user, ouf, 2)
 	ouf.close()
+
+class FSThread(threading.Thread):
+	"""docstring for FSThread"""
+	def __init__(self):
+		super(FSThread, self).__init__()
+		self.s = None
+
+	def run(self):
+		global fcode
+		self.s = socket.socket()
+		self.s.bind(("localhost", FSPORT))
+		self.s.listen(5)
+		fs, addr = self.s.accept()
+		while 1:
+			fs.sendall("filerequest\r\n")
+			c = fs.recv(1024)
+			if c:
+				c = c.strip()
+				if c != fcode:
+					with fLock:
+						fcode = c
+						print fcode
+			time.sleep(1)
 
 class EndSession(Exception):
 	pass
@@ -147,6 +175,11 @@ class ChatRoom(Room):
 		else:
 			session.push("error You can't set other user's password!\r\n")
 
+	def do_filerequest(self, session, line):
+		with fLock:
+			session.push("fcode %s\r\n" % fcode)
+		print fcode
+
 	def do_look(self, session, line):
 		session.push("The following are in this room:\r\n")
 		for other in self.sessions:
@@ -237,6 +270,8 @@ class MessageServer(dispatcher):
 
 if __name__ == '__main__':
 	s = MessageServer(PORT, NAME)
+	fsThread = FSThread()
+	fsThread.start()
 	try:
 		asyncore.loop()
 	except KeyboardInterrupt:
