@@ -137,6 +137,38 @@ class ThreadFileUpload(QtCore.QThread):
             upf.close()
         self.s.close()
 
+class ThreadFileDownload(QtCore.QThread):
+    """docstring for ThreadFileDownload"""
+    def __init__(self, fcode, filename, date, owner, path):
+        super(ThreadFileDownload, self).__init__()
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.fcode = fcode
+        self.filename = filename
+        self.date = date
+        self.owner = owner
+        self.path = path
+    def run(self):
+        self.s.connect((FILEHOST, FILEPORT))
+        self.s.sendall("fileaccess %s\r\n" % self.fcode)
+        m = ""
+        while not m:
+            m = self.s.recv(1024)
+        if m.startswith("info"):
+            self.s.sendall("download %s %s %s\r\n" % (self.filename, self.date, self.owner))
+            m = ""
+            while not m:
+                m = self.s.recv(1024)
+            if m.startswith("start"):
+                dwf = open(self.path+self.filename, 'wb')
+                while True:                           
+                    receivedData = self.s.recv(1024)                                                           
+                    if (not receivedData) or receivedData == "EOF\r\n":
+                        break
+                    dwf.write(receivedData)                        
+                print "haha"   
+                dwf.close()
+        self.s.close()
+
 class ClientWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent = None):
         """
@@ -167,6 +199,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.appointment2.editingFinished.connect(self.editAppointment2)
         self.appointment3.editingFinished.connect(self.editAppointment3)
         self.uploadButton.clicked.connect(self.uploadFile)
+        self.downloadButton.clicked.connect(self.downloadFile)
 
         self.loginDlgUI.buttonBox.accepted.connect(self.login)
         self.loginDlgUI.paswordEdit.setEchoMode(QLineEdit.Password)
@@ -177,7 +210,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
 
         self.user = None
         self.threfresh = None
-        self.path = None
+        self.path = ""
         self.patterns = []
         self.MessageSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -285,6 +318,10 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
                             t = ThreadFileUpload(fcode, freq[1], freq[2])
                             fthLst.append(t)
                             t.start()
+                        elif freq[0] == "download":
+                            t = ThreadFileDownload(fcode, freq[1], freq[2], freq[3], freq[4])
+                            fthLst.append(t)
+                            t.start()
                     except IndexError:
                         pass
             elif msg.startswith("success"):
@@ -336,7 +373,9 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             fque.append(("upload", r"C:\ludashi.txt", self.user["username"]))
 
     def downloadFile(self):
-        pass
+        self.MessageSocket.sendall("filerequest\r\n")
+        with fqueLock:
+            fque.append(("download", "ludashi.txt", "2012-12-22", "guyuhao", self.path))
 
     def deleteFile(self):
         pass
