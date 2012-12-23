@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UI_Client.ui'
 #
-# Created: Fri Dec 21 10:29:00 2012
+# Created: Sun Dec 23 20:09:30 2012
 #      by: PyQt4 UI code generator 4.8.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -90,9 +90,13 @@ class Ui_MainWindow(object):
         self.uploadButton = QtGui.QPushButton(self.Tab3)
         self.uploadButton.setGeometry(QtCore.QRect(510, 120, 75, 23))
         self.uploadButton.setObjectName(_fromUtf8("uploadButton"))
-        self.FileList = QtGui.QListWidget(self.Tab3)
+        self.FileList = QtGui.QTreeWidget(self.Tab3)
         self.FileList.setGeometry(QtCore.QRect(0, 150, 591, 231))
         self.FileList.setObjectName(_fromUtf8("FileList"))
+        self.FileList.setColumnCount(3)
+        self.FileList.headerItem().setText(0, _fromUtf8("File Name"))
+        self.FileList.headerItem().setText(1, _fromUtf8("Date"))
+        self.FileList.headerItem().setText(2, _fromUtf8("Owner"))
         self.deleteButton = QtGui.QPushButton(self.Tab3)
         self.deleteButton.setGeometry(QtCore.QRect(510, 390, 75, 23))
         self.deleteButton.setObjectName(_fromUtf8("deleteButton"))
@@ -137,7 +141,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuProject.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

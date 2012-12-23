@@ -120,17 +120,15 @@ class ThreadRefresh(QtCore.QThread):
     def run(self):
         while self.runable:
             self.s.sendall("refresh\r\n")
-            self.s.sendall("filerequest\r\n")
-            with fqueLock:
-                fque.append(("refresh", ))
             time.sleep(10)
 
 class ThreadFileRefresh(QtCore.QThread):
     """docstring for ThreadFileRefresh"""
-    def __init__(self, fcode):
+    def __init__(self, fcode, fileList):
         super(ThreadFileRefresh, self).__init__()
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.fcode = fcode
+        self.fileList = fileList
 
     def run(self):
         self.s.connect((FILEHOST, FILEPORT))
@@ -140,11 +138,21 @@ class ThreadFileRefresh(QtCore.QThread):
             m = self.s.recv(1024)
         if m.startswith("info"):
             self.s.sendall("refresh\r\n")
+            self.fileList.clear()
             while 1:
                 m = self.s.recv(1024)
                 if m.startswith("endlist"):
                     break
-                print cPickle.loads(m)
+                fileinfos = cPickle.loads(m)
+                print fileinfos
+            for fileinfo in fileinfos:
+                f = QtGui.QTreeWidgetItem(self.fileList)
+                f.setText(0, fileinfo["filename"])
+                for date in fileinfo["date"]:
+                    fdate = QtGui.QTreeWidgetItem(f)
+                    fdate.setText(0, fileinfo["filename"])
+                    fdate.setText(1, date)
+                    fdate.setText(2, fileinfo["owner"])
         self.s.close()
 
 class ThreadFileUpload(QtCore.QThread):
@@ -199,14 +207,14 @@ class ThreadFileDownload(QtCore.QThread):
             while not m:
                 m = self.s.recv(1024)
             if m.startswith("start"):
-                dwf = open(self.path+self.filename, 'wb')
+                dwf = open(self.path+"\\"+self.filename, 'wb')
                 while True:                           
                     receivedData = self.s.recv(1024)                                                           
                     if (not receivedData) or receivedData == "EOF\r\n":
                         break
-                    dwf.write(receivedData)                        
-                print "haha"   
+                    dwf.write(receivedData)                          
                 dwf.close()
+        print self.path+self.filename 
         self.s.close()
 
 class ThreadFileDelete(QtCore.QThread):
@@ -426,7 +434,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
                     try:
                         freq = fque.popleft()
                         if freq[0] == "refresh":
-                            t = ThreadFileRefresh(fcode)
+                            t = ThreadFileRefresh(fcode, freq[1])
                             fthLst[0] = t
                             t.start()
                         elif freq[0] == "upload":
@@ -484,7 +492,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.MessageSocket.sendall("refresh\r\n")
         self.MessageSocket.sendall("filerequest\r\n")
         with fqueLock:
-            fque.append(("refresh", ))
+            fque.append(("refresh", self.FileList))
 
     def uploadFile(self):
         global f2upload
@@ -502,13 +510,23 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
 
     def downloadFile(self):
         self.MessageSocket.sendall("filerequest\r\n")
-        with fqueLock:
-            fque.append(("download", "ludashi.txt", "2012-12-22", "guyuhao", self.path))
+        fileItem = self.FileList.currentItem()
+        filename = fileItem.text(0)
+        date = fileItem.text(1)
+        owner = fileItem.text(2)
+        if date and owner:
+            with fqueLock:
+                fque.append(("download", filename, date, owner, self.path))
 
     def deleteFile(self):
         self.MessageSocket.sendall("filerequest\r\n")
-        with fqueLock:
-            fque.append(("delete", self.user["username"], "ludashi.txt", "2012-12-23", "guyuhao"))
+        fileItem = self.FileList.currentItem()
+        filename = fileItem.text(0)
+        date = fileItem.text(1)
+        owner = fileItem.text(2)
+        if date and owner:
+            with fqueLock:
+                fque.append(("delete", self.user["username"], filename, date, owner))
 
 if  __name__ == "__main__":
     import sys

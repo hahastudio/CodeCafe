@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="Tab1">
      <attribute name="title">
@@ -126,7 +126,7 @@
        <string>Upload</string>
       </property>
      </widget>
-     <widget class="QListWidget" name="FileList">
+     <widget class="QTreeWidget" name="FileList">
       <property name="geometry">
        <rect>
         <x>0</x>
@@ -135,6 +135,11 @@
         <height>231</height>
        </rect>
       </property>
+      <column>
+       <property name="text">
+        <string notr="true">1</string>
+       </property>
+      </column>
      </widget>
      <widget class="QPushButton" name="deleteButton">
       <property name="geometry">
