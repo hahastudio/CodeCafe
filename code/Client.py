@@ -37,11 +37,20 @@ msgLst = []
 fqueLock = RLock()
 fque = deque()
 fthLst = [None]
+f2upLock = RLock()
+f2upload = []
+with open("fileUploaded", "rb") as inf:
+    fDict = cPickle.load(inf)
 
 def all_files(pattern, search_path, pathsep=os.pathsep):
     for path in search_path.split(pathsep):
         for match in glob.glob(os.path.join(path, pattern)):
             yield match
+
+def writeFileUploaded(dict):
+    ouf = open("fileUploaded", "wb")
+    cPickle.dump(dict, ouf, 2)
+    ouf.close()
 
 class ThreadRecv(QtCore.QThread):
     """
@@ -73,6 +82,33 @@ class ThreadRecv(QtCore.QThread):
                 self.pressed.emit()
             #else:
                 #self.message = self.message
+
+class ThreadFile2Upload(QtCore.QThread):
+    """docstring for ThreadFile2Upload"""
+    def __init__(self, fileList, path, patterns):
+        super(ThreadFile2Upload, self).__init__()
+        self.fileList = fileList
+        self.path = path
+        self.patterns = patterns
+        self.runable = True
+    def run(self):
+        while self.runable:
+            fSet = set([])
+            for pattern in self.patterns:
+                for f in all_files(pattern, self.path):
+                    fSet.add(f)
+            self.fileList.clear()
+            for f in fSet:
+                try:
+                    if os.path.getmtime(f) > fDict[f]:
+                        with f2upLock:
+                            f2upload.append(f)
+                            self.fileList.addItem(os.path.split(f)[1])
+                except KeyError:
+                    with f2upLock:
+                        f2upload.append(f)
+                        self.fileList.addItem(os.path.split(f)[1])
+            time.sleep(15)
 
 class ThreadRefresh(QtCore.QThread):
     """docstring for ThreadRefresh"""
@@ -113,31 +149,33 @@ class ThreadFileRefresh(QtCore.QThread):
 
 class ThreadFileUpload(QtCore.QThread):
     """docstring for ThreadFileRefresh"""
-    def __init__(self, fcode, f, username):
+    def __init__(self, fcode, files, username):
         super(ThreadFileUpload, self).__init__()
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.fcode = fcode
-        self.f = f
+        self.files = files
         self.username = username
 
     def run(self):
-        self.s.connect((FILEHOST, FILEPORT))
-        self.s.sendall("fileaccess %s\r\n" % self.fcode)
-        m = ""
-        while not m:
-            m = self.s.recv(1024)
-        if m.startswith("info"):
-            self.s.sendall("upload %s %s\r\n" % (os.path.split(self.f)[1], self.username))
-            upf = open(self.f, "rb")
-            while True:                       
-                data = upf.read(1024)                                         
-                if not data:   
-                    break  
-                while len(data) > 0:   
-                    intSent = self.s.send(data)   
-                    data = data[intSent:]
-            upf.close()
-        self.s.close()
+        for f in self.files:
+            self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.s.connect((FILEHOST, FILEPORT))
+            self.s.sendall("fileaccess %s\r\n" % self.fcode)
+            m = ""
+            while not m:
+                m = self.s.recv(1024)
+            if m.startswith("info"):
+                self.s.sendall("upload %s %s\r\n" % (os.path.split(f)[1], self.username))
+                upf = open(f, "rb")
+                while True:                       
+                    data = upf.read(1024)                                         
+                    if not data:   
+                        break  
+                    while len(data) > 0:   
+                        intSent = self.s.send(data)   
+                        data = data[intSent:]
+                upf.close()
+            self.s.close()
+            time.sleep(2)
 
 class ThreadFileDownload(QtCore.QThread):
     """docstring for ThreadFileDownload"""
@@ -238,12 +276,21 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.pwdDlgUI.cPwdEdit.setEchoMode(QLineEdit.Password)
         self.pwdDlgUI.nPwdEdit.setEchoMode(QLineEdit.Password)
         self.pwdDlgUI.nPwdEdit_2.setEchoMode(QLineEdit.Password)
+        self.pathDlgUI.openPathButton.clicked.connect(self.getPath)
+        self.pathDlgUI.addPatternButton.clicked.connect(self.addPattern)
+        self.pathDlgUI.delPatternButton.clicked.connect(self.delPattern)
+        self.pathDlgUI.buttonBox.accepted.connect(self.savePathConfig)
 
         self.user = None
         self.threfresh = None
-        self.path = ""
-        self.patterns = []
+        pathConfig = open("pathConfig", "rb")
+        self.path = cPickle.load(pathConfig)
+        self.patterns = cPickle.load(pathConfig)
+        pathConfig.close()
+        self.tempPatterns = [pattern for pattern in self.patterns]
         self.MessageSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.fileWatcher = ThreadFile2Upload(self.uploadList, self.path, self.patterns)
+        self.fileWatcher.start()
         try:
             self.MessageSocket.connect((MESSAGEHOST, MESSAGEPORT))
             self.threcv = ThreadRecv(self.MessageSocket)
@@ -260,7 +307,44 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.pwdDlg.show()
 
     def openPathDlg(self):
+        self.pathDlgUI.pathEdit.setText(self.path)
+        self.pathDlgUI.patternList.clear()
+        for pattern in self.patterns:
+            self.pathDlgUI.patternList.addItem(pattern)
         self.pathDlg.show()
+
+    def getPath(self):
+        options = QtGui.QFileDialog.DontResolveSymlinks | QtGui.QFileDialog.ShowDirsOnly
+        directory = QtGui.QFileDialog.getExistingDirectory(self,
+                "Select Project Path", self.pathDlgUI.pathEdit.text(), options)
+        if directory:
+            self.pathDlgUI.pathEdit.setText(directory)
+
+    def addPattern(self):
+        pattern = str(self.pathDlgUI.filePatternEdit.text())
+        if not pattern in self.tempPatterns:
+            self.tempPatterns.append(pattern)
+            self.pathDlgUI.patternList.addItem(pattern)
+
+    def delPattern(self):
+        patternItem = self.pathDlgUI.patternList.takeItem(self.pathDlgUI.patternList.currentRow())
+        pattern = patternItem.text()
+        del patternItem
+        try:
+            self.tempPatterns.remove(pattern)
+        except ValueError:
+            pass
+
+    def savePathConfig(self):
+        self.path = str(self.pathDlgUI.pathEdit.text())
+        self.patterns = [pattern for pattern in self.tempPatterns]
+        pathConfig = open("pathConfig", "wb")
+        cPickle.dump(self.path, pathConfig, 2)
+        cPickle.dump(self.patterns, pathConfig, 2)
+        self.fileWatcher.path = self.path
+        self.fileWatcher.patterns = self.patterns
+        pathConfig.close()
+        self.pathDlg.close()
 
     def login(self):
         username = str(self.loginDlgUI.usernameEdit.text())
@@ -403,9 +487,18 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             fque.append(("refresh", ))
 
     def uploadFile(self):
+        global f2upload
+        global fDict
+        for f in f2upload:
+            fDict[f] = os.path.getmtime(f)
         self.MessageSocket.sendall("filerequest\r\n")
+        files = [f for f in f2upload]
         with fqueLock:
-            fque.append(("upload", r"C:\ludashi.txt", self.user["username"]))
+            fque.append(("upload", files, self.user["username"]))
+        with f2upLock:
+            f2upload = []
+        writeFileUploaded(fDict)
+        self.uploadList.clear()
 
     def downloadFile(self):
         self.MessageSocket.sendall("filerequest\r\n")

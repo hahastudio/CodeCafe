@@ -47,7 +47,6 @@ class Ui_Path(object):
         self.delPatternButton = QtGui.QPushButton(self.groupBox_2)
         self.delPatternButton.setGeometry(QtCore.QRect(300, 20, 75, 23))
         self.delPatternButton.setObjectName(_fromUtf8("delPatternButton"))
-
         self.retranslateUi(PathDlg)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), PathDlg.accept)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), PathDlg.reject)

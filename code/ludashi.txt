@@ -1,5 +1,0 @@
-2011/9/27 12:39:02 : Enter initNT_system
-2011/9/27 12:39:02 : gwiopm_driver.openscm;
-2011/9/27 12:39:02 : gwiopm_driver.install; success
-2011/9/27 12:39:02 : gwiopm_driver.start; success
-2011/9/27 12:39:02 : gwiopm_driver.DeviceOpen; success

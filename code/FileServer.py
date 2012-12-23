@@ -117,7 +117,7 @@ class MyServer(SocketServer.BaseRequestHandler):
                 today = time.strftime('%Y-%m-%d',time.localtime(time.time())) 
                 splitanswer = receivedData.split(' ')
 
-                nowaddr = splitanswer[1]+'_'+today+'_'+splitanswer[2][:-2]
+                nowaddr = splitanswer[1]+'_'+today+'_'+splitanswer[2].strip()
                 vernum = 0
                 if os.path.exists(nowaddr):
                     vernum = 1

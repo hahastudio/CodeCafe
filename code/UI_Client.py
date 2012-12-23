@@ -37,6 +37,7 @@ class TextEdit(QtGui.QTextEdit):
         if self._changed:
             self.editingFinished.emit()
         super(TextEdit, self).focusOutEvent( event )
+        self._changed = False
 
     def _handle_text_changed(self):
         self._changed = True
