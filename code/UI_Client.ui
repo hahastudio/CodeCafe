@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>738</width>
+    <width>740</width>
     <height>489</height>
    </rect>
   </property>
@@ -17,9 +17,9 @@
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>5</x>
+      <x>0</x>
       <y>0</y>
-      <width>581</width>
+      <width>601</width>
       <height>441</height>
      </rect>
     </property>
@@ -70,58 +70,6 @@
        </rect>
       </property>
      </widget>
-     <widget class="QPushButton" name="EditBoardButton">
-      <property name="geometry">
-       <rect>
-        <x>250</x>
-        <y>200</y>
-        <width>75</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Edit</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="EditAppointment1Button">
-      <property name="geometry">
-       <rect>
-        <x>60</x>
-        <y>230</y>
-        <width>75</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Edit</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="EditAppointment2Button">
-      <property name="geometry">
-       <rect>
-        <x>250</x>
-        <y>230</y>
-        <width>75</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Edit</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="EditAppointment3Button">
-      <property name="geometry">
-       <rect>
-        <x>440</x>
-        <y>230</y>
-        <width>75</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Edit</string>
-      </property>
-     </widget>
     </widget>
     <widget class="QWidget" name="Tab2">
      <attribute name="title">
@@ -132,7 +80,7 @@
        <rect>
         <x>10</x>
         <y>0</y>
-        <width>561</width>
+        <width>571</width>
         <height>281</height>
        </rect>
       </property>
@@ -142,7 +90,7 @@
        <rect>
         <x>10</x>
         <y>290</y>
-        <width>561</width>
+        <width>571</width>
         <height>101</height>
        </rect>
       </property>
@@ -150,7 +98,7 @@
      <widget class="QPushButton" name="sendButton">
       <property name="geometry">
        <rect>
-        <x>470</x>
+        <x>490</x>
         <y>390</y>
         <width>89</width>
         <height>23</height>
@@ -165,36 +113,67 @@
      <attribute name="title">
       <string>File</string>
      </attribute>
-     <widget class="QPushButton" name="OpenFileButton">
+     <widget class="QPushButton" name="uploadButton">
       <property name="geometry">
        <rect>
-        <x>480</x>
-        <y>10</y>
+        <x>510</x>
+        <y>120</y>
         <width>75</width>
         <height>23</height>
        </rect>
       </property>
       <property name="text">
-       <string>Open</string>
+       <string>Upload</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="pathEdit">
+     <widget class="QTreeWidget" name="FileList">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>10</y>
-        <width>461</width>
-        <height>20</height>
+        <x>0</x>
+        <y>150</y>
+        <width>591</width>
+        <height>231</height>
        </rect>
       </property>
+      <column>
+       <property name="text">
+        <string notr="true">1</string>
+       </property>
+      </column>
      </widget>
-     <widget class="QListWidget" name="FileList">
+     <widget class="QPushButton" name="deleteButton">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>40</y>
-        <width>561</width>
-        <height>371</height>
+        <x>510</x>
+        <y>390</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Delete</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="downloadButton">
+      <property name="geometry">
+       <rect>
+        <x>420</x>
+        <y>390</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Download</string>
+      </property>
+     </widget>
+     <widget class="QListWidget" name="uploadList">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>501</width>
+        <height>141</height>
        </rect>
       </property>
      </widget>
@@ -203,9 +182,9 @@
    <widget class="QListWidget" name="NameList">
     <property name="geometry">
      <rect>
-      <x>590</x>
+      <x>610</x>
       <y>20</y>
-      <width>141</width>
+      <width>131</width>
       <height>421</height>
      </rect>
     </property>
@@ -218,7 +197,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>738</width>
+     <width>740</width>
      <height>23</height>
     </rect>
    </property>
