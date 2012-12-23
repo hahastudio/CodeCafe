@@ -36,7 +36,7 @@ msgLock = RLock()
 msgLst = []
 fqueLock = RLock()
 fque = deque()
-fthLst = []
+fthLst = [None]
 
 def all_files(pattern, search_path, pathsep=os.pathsep):
     for path in search_path.split(pathsep):
@@ -104,9 +104,11 @@ class ThreadFileRefresh(QtCore.QThread):
             m = self.s.recv(1024)
         if m.startswith("info"):
             self.s.sendall("refresh\r\n")
-            m = self.s.recv(1024)
-            while not m.startswith("endlist"):
-                print cPickle.loads(m), 1
+            while 1:
+                m = self.s.recv(1024)
+                if m.startswith("endlist"):
+                    break
+                print cPickle.loads(m)
         self.s.close()
 
 class ThreadFileUpload(QtCore.QThread):
@@ -169,6 +171,34 @@ class ThreadFileDownload(QtCore.QThread):
                 dwf.close()
         self.s.close()
 
+class ThreadFileDelete(QtCore.QThread):
+    """docstring for ThreadFileDelete"""
+    def __init__(self, fcode, user, filename, date, fileowner):
+        super(ThreadFileDelete, self).__init__()
+        self.fcode = fcode
+        self.user = user
+        self.filename = filename
+        self.date = date
+        self.fileowner = fileowner
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def run(self):
+        self.s.connect((FILEHOST, FILEPORT))
+        self.s.sendall("fileaccess %s\r\n" % self.fcode)
+        m = ""
+        while not m:
+            m = self.s.recv(1024)
+        if m.startswith("info"):
+            self.s.sendall("delete %s %s %s %s\r\n" % (self.user, self.filename, self.date, self.fileowner))
+            m = ""
+            while not m:
+                m = self.s.recv(1024)
+            if m.startswith("info"):
+                pass
+            else:
+                print m
+        self.s.close()
+        
+
 class ClientWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent = None):
         """
@@ -200,6 +230,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.appointment3.editingFinished.connect(self.editAppointment3)
         self.uploadButton.clicked.connect(self.uploadFile)
         self.downloadButton.clicked.connect(self.downloadFile)
+        self.deleteButton.clicked.connect(self.deleteFile)
 
         self.loginDlgUI.buttonBox.accepted.connect(self.login)
         self.loginDlgUI.paswordEdit.setEchoMode(QLineEdit.Password)
@@ -312,7 +343,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
                         freq = fque.popleft()
                         if freq[0] == "refresh":
                             t = ThreadFileRefresh(fcode)
-                            fthLst.append(t)
+                            fthLst[0] = t
                             t.start()
                         elif freq[0] == "upload":
                             t = ThreadFileUpload(fcode, freq[1], freq[2])
@@ -320,6 +351,10 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
                             t.start()
                         elif freq[0] == "download":
                             t = ThreadFileDownload(fcode, freq[1], freq[2], freq[3], freq[4])
+                            fthLst.append(t)
+                            t.start()
+                        elif freq[0] == "delete":
+                            t = ThreadFileDelete(fcode, freq[1], freq[2], freq[3], freq[4])
                             fthLst.append(t)
                             t.start()
                     except IndexError:
@@ -378,7 +413,9 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             fque.append(("download", "ludashi.txt", "2012-12-22", "guyuhao", self.path))
 
     def deleteFile(self):
-        pass
+        self.MessageSocket.sendall("filerequest\r\n")
+        with fqueLock:
+            fque.append(("delete", self.user["username"], "ludashi.txt", "2012-12-23", "guyuhao"))
 
 if  __name__ == "__main__":
     import sys
