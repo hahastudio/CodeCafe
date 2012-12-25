@@ -24,11 +24,14 @@ UserDict = dict([(u["username"], u) for u in UserLst])
 fLock = threading.RLock()
 fcode = ""
 
+usrdatLock = threading.RLock()
+boardLock = threading.RLock()
 def writeUserData(userlst):
-	ouf = open("userdata", "wb")
-	for user in userlst:
-		cPickle.dump(user, ouf, 2)
-	ouf.close()
+	with usrdatLock:
+		ouf = open("userdata", "wb")
+		for user in userlst:
+			cPickle.dump(user, ouf, 2)
+		ouf.close()
 
 class FSThread(threading.Thread):
 	"""docstring for FSThread"""
@@ -152,9 +155,8 @@ class ChatRoom(Room):
 			session.push("error You don't have permission.\r\n")
 
 	def do_editAppointment(self, session, line):
-		index, content = line.split(' ', 1)
 		if session.user["isAdmin"]:
-			self.server.appointments[int(index)] = content
+			self.server.appointment = line
 			self.broadcast("appointment " + line + "\r\n")
 			self.server.writeBoards()
 		else:
@@ -162,8 +164,7 @@ class ChatRoom(Room):
 
 	def do_refresh(self, session, line):
 		session.push("board " + self.server.board + "\r\n")
-		for i, content in enumerate(self.server.appointments):
-			session.push("appointment %d %s\r\n" % (i, content))
+		session.push("appointment %s\r\n" % self.server.appointment)
 		session.push("user " + ' '.join(name for name in self.server.users) + "\r\n")
 
 	def do_setpwd(self, session, line):
@@ -252,7 +253,7 @@ class MessageServer(dispatcher):
 		self.name = name
 		inf = open('boards', 'rb')
 		self.board = cPickle.load(inf)
-		self.appointments = cPickle.load(inf)
+		self.appointment = cPickle.load(inf)
 		inf.close()
 		self.users = {}
 		self.main_room = ChatRoom(self)
@@ -263,10 +264,11 @@ class MessageServer(dispatcher):
 		ChatSession(self, connetion)
 
 	def writeBoards(self):
-		ouf = open("boards", "wb")
-		cPickle.dump(self.board, ouf, 2)
-		cPickle.dump(self.appointments, ouf, 2)
-		ouf.close()
+		with boardLock:
+			ouf = open("boards", "wb")
+			cPickle.dump(self.board, ouf, 2)
+			cPickle.dump(self.appointment, ouf, 2)
+			ouf.close()
 
 if __name__ == '__main__':
 	s = MessageServer(PORT, NAME)

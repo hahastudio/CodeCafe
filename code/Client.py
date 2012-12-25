@@ -36,9 +36,11 @@ msgLock = RLock()
 msgLst = []
 fqueLock = RLock()
 fque = deque()
-fthLst = [None]
+fthLst = []
 f2upLock = RLock()
 f2upload = []
+finfoLock = RLock()
+finfo = []
 with open("fileUploaded", "rb") as inf:
     fDict = cPickle.load(inf)
 
@@ -103,11 +105,11 @@ class ThreadFile2Upload(QtCore.QThread):
                     if os.path.getmtime(f) > fDict[f]:
                         with f2upLock:
                             f2upload.append(f)
-                            self.fileList.addItem(os.path.split(f)[1])
+                            self.fileList.addItem(os.path.split(f)[1].decode("utf-8"))
                 except KeyError:
                     with f2upLock:
                         f2upload.append(f)
-                        self.fileList.addItem(os.path.split(f)[1])
+                        self.fileList.addItem(os.path.split(f)[1].decode("utf-8"))
             time.sleep(15)
 
 class ThreadRefresh(QtCore.QThread):
@@ -124,13 +126,15 @@ class ThreadRefresh(QtCore.QThread):
 
 class ThreadFileRefresh(QtCore.QThread):
     """docstring for ThreadFileRefresh"""
-    def __init__(self, fcode, fileList):
+    refreshed = QtCore.pyqtSignal()
+
+    def __init__(self, fcode):
         super(ThreadFileRefresh, self).__init__()
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.fcode = fcode
-        self.fileList = fileList
 
     def run(self):
+        global finfo
         self.s.connect((FILEHOST, FILEPORT))
         self.s.sendall("fileaccess %s\r\n" % self.fcode)
         m = ""
@@ -138,21 +142,14 @@ class ThreadFileRefresh(QtCore.QThread):
             m = self.s.recv(1024)
         if m.startswith("info"):
             self.s.sendall("refresh\r\n")
-            self.fileList.clear()
             while 1:
                 m = self.s.recv(1024)
                 if m.startswith("endlist"):
                     break
-                fileinfos = cPickle.loads(m)
-                print fileinfos
-            for fileinfo in fileinfos:
-                f = QtGui.QTreeWidgetItem(self.fileList)
-                f.setText(0, fileinfo["filename"])
-                for date in fileinfo["date"]:
-                    fdate = QtGui.QTreeWidgetItem(f)
-                    fdate.setText(0, fileinfo["filename"])
-                    fdate.setText(1, date)
-                    fdate.setText(2, fileinfo["owner"])
+                with finfoLock:
+                    finfo = cPickle.loads(m)
+                print finfo
+        self.refreshed.emit()
         self.s.close()
 
 class ThreadFileUpload(QtCore.QThread):
@@ -271,9 +268,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.actionSetPwd.triggered.connect(self.openPwdDlg)
         self.actionSetPath.triggered.connect(self.openPathDlg)
         self.Board.editingFinished.connect(self.editBoard)
-        self.appointment1.editingFinished.connect(self.editAppointment1)
-        self.appointment2.editingFinished.connect(self.editAppointment2)
-        self.appointment3.editingFinished.connect(self.editAppointment3)
+        self.appointment.editingFinished.connect(self.editAppointment)
         self.uploadButton.clicked.connect(self.uploadFile)
         self.downloadButton.clicked.connect(self.downloadFile)
         self.deleteButton.clicked.connect(self.deleteFile)
@@ -329,7 +324,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             self.pathDlgUI.pathEdit.setText(directory)
 
     def addPattern(self):
-        pattern = str(self.pathDlgUI.filePatternEdit.text())
+        pattern = str(self.pathDlgUI.filePatternEdit.text()).decode("utf-8")
         if not pattern in self.tempPatterns:
             self.tempPatterns.append(pattern)
             self.pathDlgUI.patternList.addItem(pattern)
@@ -344,7 +339,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             pass
 
     def savePathConfig(self):
-        self.path = str(self.pathDlgUI.pathEdit.text())
+        self.path = str(self.pathDlgUI.pathEdit.text()).decode("utf-8")
         self.patterns = [pattern for pattern in self.tempPatterns]
         pathConfig = open("pathConfig", "wb")
         cPickle.dump(self.path, pathConfig, 2)
@@ -412,13 +407,8 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
                 cmd, content = msg.split(' ', 1)
                 self.Board.setText(content.decode("utf-8"))
             elif msg.startswith("appointment"):
-                cmd, index, appt = msg.split(' ', 2)
-                if index == '0':
-                    self.appointment1.setText(appt.decode("utf-8"))
-                elif index == '1':
-                    self.appointment2.setText(appt.decode("utf-8"))
-                elif index == '2':
-                    self.appointment3.setText(appt.decode("utf-8"))
+                cmd, appt = msg.split(' ', 1)
+                self.appointment.setText(appt.decode("utf-8"))
             elif msg.startswith("user"):
                 userList = msg.split(' ')[1:]
                 self.NameList.clear()
@@ -434,9 +424,10 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
                     try:
                         freq = fque.popleft()
                         if freq[0] == "refresh":
-                            t = ThreadFileRefresh(fcode, freq[1])
-                            fthLst[0] = t
-                            t.start()
+                            self.fileRefreshThread = ThreadFileRefresh(fcode)
+                            QtCore.QObject.connect(self.fileRefreshThread, QtCore.SIGNAL("refreshed()"), self.displayFileList)
+                            self.fileRefreshThread.start()
+
                         elif freq[0] == "upload":
                             t = ThreadFileUpload(fcode, freq[1], freq[2])
                             fthLst.append(t)
@@ -462,25 +453,29 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             elif msg:
                 self.ChatBrowser.append(msg.decode("utf-8")+"\n")
 
+    def displayFileList(self):
+        global finfo
+        fileinfos = finfo
+        print fileinfos
+        self.FileList.clear()
+        for fileinfo in fileinfos:
+            f = QtGui.QTreeWidgetItem(self.FileList)
+            f.setText(0, fileinfo["filename"])
+            for date in fileinfo["date"]:
+                fdate = QtGui.QTreeWidgetItem(f)
+                fdate.setText(0, fileinfo["filename"])
+                fdate.setText(1, date)
+                fdate.setText(2, fileinfo["owner"])
+
     def editBoard(self):
         board = str(self.Board.toPlainText()).decode("utf-8")
-        if board:
+        if board and self.user["isAdmin"]:
             self.MessageSocket.sendall("editBoard %s\r\n" % board)
 
-    def editAppointment1(self):
-        appointment1 = str(self.appointment1.toPlainText()).decode("utf-8")
-        if appointment1:
-            self.MessageSocket.sendall("editAppointment 0 %s\r\n" % appointment1)
-
-    def editAppointment2(self):
-        appointment2 = str(self.appointment2.toPlainText()).decode("utf-8")
-        if appointment2:
-            self.MessageSocket.sendall("editAppointment 1 %s\r\n" % appointment2)
-
-    def editAppointment3(self):
-        appointment3 = str(self.appointment3.toPlainText()).decode("utf-8")
-        if appointment3:
-            self.MessageSocket.sendall("editAppointment 2 %s\r\n" % appointment3)
+    def editAppointment(self):
+        appointment = str(self.appointment.toPlainText()).decode("utf-8")
+        if appointment and self.user["isAdmin"]:
+            self.MessageSocket.sendall("editAppointment %s\r\n" % appointment)
 
     def sendMsg(self):
         txt = self.ChatEdit.toPlainText()
@@ -492,7 +487,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.MessageSocket.sendall("refresh\r\n")
         self.MessageSocket.sendall("filerequest\r\n")
         with fqueLock:
-            fque.append(("refresh", self.FileList))
+            fque.append(("refresh", ))
 
     def uploadFile(self):
         global f2upload
