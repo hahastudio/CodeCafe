@@ -478,9 +478,14 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             self.MessageSocket.sendall("editAppointment %s\r\n" % appointment)
 
     def sendMsg(self):
-        txt = self.ChatEdit.toPlainText()
-        msg = str(txt).decode('utf-8')
-        self.MessageSocket.sendall("say %s\r\n" % msg)
+        toSomeone = str(self.toEdit.toPlainText()).decode("utf-8")
+        msg = str(self.ChatEdit.toPlainText()).decode('utf-8')
+        nameList = set(toSomeone.split())
+        if nameList:
+            for name in nameList:
+                self.MessageSocket.sendall("say %s %s\r\n" % (name, msg))
+        else:
+            self.MessageSocket.sendall("say %s %s\r\n" % ("-all", msg))
         self.ChatEdit.setText("")
 
     def refresh(self):

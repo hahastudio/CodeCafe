@@ -150,7 +150,7 @@
        <string>Message</string>
       </property>
      </widget>
-     <widget class="QTextEdit" name="textEdit">
+     <widget class="QTextEdit" name="toEdit">
       <property name="geometry">
        <rect>
         <x>10</x>
