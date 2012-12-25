@@ -6,6 +6,7 @@ import asyncore
 import time
 import cPickle
 import threading
+from rsa import RSA
 
 PORT = 50000
 FSPORT = 49999
@@ -20,6 +21,8 @@ while 1:
 		break
 usrDB.close()
 UserDict = dict([(u["username"], u) for u in UserLst])
+
+RSAEncryptor = RSA()
 
 fLock = threading.RLock()
 fcode = ""
@@ -114,7 +117,8 @@ class LoginRoom(Room):
 				session.user = UserDict[name]
 				session.push("success login\r\n")
 				session.push("Welcome, %s!\r\n" % name)
-				session.push("account %s \r\n" % cPickle.dumps(session.user, 2))
+				session.push("account %s\r\n" % cPickle.dumps(session.user, 2))
+				session.push("encrypt %s\r\n" % cPickle.dumps(RSAEncryptor, 2))
 				session.enter(self.server.main_room)
 			else:
 				session.push("The user %s is already online!\r\n" % name)
@@ -135,7 +139,7 @@ class ChatRoom(Room):
 	def do_say(self, session, line):
 		dst, msg = line.split(' ', 1)
 		nowtime = time.strftime('%H:%M:%S')
-		msgPkg = nowtime + ' ' + session.user["username"] + " to " + dst + ": \n" + msg + "\r\n"
+		msgPkg = "say " + nowtime + ' ' + session.user["username"] + " to " + dst + ": \n" + msg + "\r\n"
 		if dst == "-all":
 			self.broadcast(msgPkg)
 		else:

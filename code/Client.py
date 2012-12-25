@@ -285,6 +285,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.pathDlgUI.buttonBox.accepted.connect(self.savePathConfig)
 
         self.user = None
+        self.rsa = None
         self.threfresh = None
         pathConfig = open("pathConfig", "rb")
         self.path = cPickle.load(pathConfig)
@@ -417,6 +418,9 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             elif msg.startswith("account"):
                 cmd, content = msg.split(' ', 1)
                 self.user = cPickle.loads(content)
+            elif msg.startswith("encrypt"):
+                cmd, content = msg.split(' ', 1)
+                self.rsa = cPickle.loads(content)
             elif msg.startswith("fcode"):
                 cmd, fcode = msg.split(' ', 1)
                 print fcode
@@ -450,6 +454,11 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
             elif msg.startswith("error"):
                 cmd, content = msg.split(' ', 1)
                 reply = QtGui.QMessageBox.information(self, cmd, content)
+            elif msg.startswith("say"):
+                cmd, content = msg.split(' ', 1)
+                header, enmsg = content.split('\n', 1)
+                demsg = self.rsa.decrypt(cPickle.loads(enmsg))
+                self.ChatBrowser.append("%s \n%s\n".decode("utf-8") % (header, demsg))
             elif msg:
                 self.ChatBrowser.append(msg.decode("utf-8")+"\n")
 
@@ -480,12 +489,13 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
     def sendMsg(self):
         toSomeone = str(self.toEdit.toPlainText()).decode("utf-8")
         msg = str(self.ChatEdit.toPlainText()).decode('utf-8')
+        enmsg = self.rsa.encrypt(msg)
         nameList = set(toSomeone.split())
         if nameList:
             for name in nameList:
-                self.MessageSocket.sendall("say %s %s\r\n" % (name, msg))
+                self.MessageSocket.sendall("say %s %s\r\n" % (name, cPickle.dumps(enmsg, 2)))
         else:
-            self.MessageSocket.sendall("say %s %s\r\n" % ("-all", msg))
+            self.MessageSocket.sendall("say %s %s\r\n" % ("-all", cPickle.dumps(enmsg, 2)))
         self.ChatEdit.setText("")
 
     def refresh(self):
