@@ -7,10 +7,25 @@ import threading
 import fcode
 import cPickle
 import sys
-"""
-fcodethread该线程在每个整点时刻对文件服务器的公共密钥进行更新，增强安全性
-"""
+import re
+
+def getip():
+    """
+    getip()
+    使用socket模块中的gethostbyname_ex(hostname)函数，
+    返回非192开头的ipv4地址。
+    """
+    names, aliases, ips = socket.gethostbyname_ex(socket.gethostname())
+    for ip in ips :
+        if not re.match('^192', ip):
+            return ip
+    return ips[0]
+
+
 class fcodethread(threading.Thread):
+    """
+    fcodethread该线程在每个整点时刻对文件服务器的公共密钥进行更新，增强安全性
+    """
     def __init__(self):
         threading.Thread.__init__(self)
 
@@ -20,10 +35,11 @@ class fcodethread(threading.Thread):
         while 1:
             if time.strftime('%M-%S',time.localtime(time.time())) == '00-00':
                 fcode.fcode = random.randint(0,999988)
-"""
-connectmessageserver该线程用来关联messageserver，在启动文件服务器时被首先启动
-"""
+
 class connectmessageserver(threading.Thread):
+    """
+    connectmessageserver该线程用来关联messageserver，在启动文件服务器时被首先启动
+    """
     def __init__(self):
         threading.Thread.__init__(self)
 
@@ -37,11 +53,11 @@ class connectmessageserver(threading.Thread):
             if temp.startswith('filerequest'):
                 self.sockettoMS.send(str(fcode.fcode)+'\r\n')
 
-"""
-文件服务器的主类，每次有clinet访问时都会启动一个线程来支持client的操作
-"""
-class MyServer(SocketServer.BaseRequestHandler):   
 
+class MyServer(SocketServer.BaseRequestHandler):   
+    """
+    文件服务器的主类，每次有clinet访问时都会启动一个线程来支持client的操作
+    """
     modcode = 999987             
     def handle(self):   
         
@@ -217,5 +233,6 @@ if __name__ == '__main__':
     threadForMS.start()
     threadForFcode = fcodethread()
     threadForFcode.start()
+    print "FileServer's IP: %s, port: %d" % (getip(), 50001)
     srv = SocketServer.ThreadingTCPServer(('localhost', 50001), MyServer)   
     srv.serve_forever()

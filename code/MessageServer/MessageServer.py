@@ -6,6 +6,7 @@ import asyncore
 import time
 import cPickle
 import threading
+import re
 from rsa import RSA
 
 PORT = 50000
@@ -35,6 +36,18 @@ def writeUserData(userlst):
 		for user in userlst:
 			cPickle.dump(user, ouf, 2)
 		ouf.close()
+
+def getip():
+    """
+    getip()
+    使用socket模块中的gethostbyname_ex(hostname)函数，
+    返回非192开头的ipv4地址。
+    """
+    names, aliases, ips = socket.gethostbyname_ex(socket.gethostname())
+    for ip in ips :
+        if not re.match('^192', ip):
+            return ip
+    return ips[0]
 
 class FSThread(threading.Thread):
 	"""docstring for FSThread"""
@@ -262,6 +275,7 @@ class MessageServer(dispatcher):
 		self.users = {}
 		self.main_room = ChatRoom(self)
 		print "Successfully initialize MessageServer."
+		print "MessageServer's IP: %s, port: %d" % (getip(), PORT)
 
 	def handle_accept(self):
 		connetion, addr = self.accept()

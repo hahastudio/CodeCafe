@@ -319,6 +319,7 @@
      <string>Project</string>
     </property>
     <addaction name="actionSetPath"/>
+    <addaction name="actionSetIP"/>
     <addaction name="actionRefresh"/>
    </widget>
    <addaction name="menu"/>
@@ -351,6 +352,11 @@
   <action name="actionRefresh">
    <property name="text">
     <string>Refresh</string>
+   </property>
+  </action>
+  <action name="actionSetIP">
+   <property name="text">
+    <string>Set IP</string>
    </property>
   </action>
  </widget>

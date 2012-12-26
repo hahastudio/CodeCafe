@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UI_Client.ui'
 #
-# Created: Tue Dec 25 20:01:53 2012
+# Created: Wed Dec 26 19:51:06 2012
 #      by: PyQt4 UI code generator 4.8.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -95,7 +95,7 @@ class Ui_MainWindow(object):
         self.label_5.setObjectName(_fromUtf8("label_5"))
         self.toEdit = QtGui.QTextEdit(self.Tab2)
         self.toEdit.setGeometry(QtCore.QRect(10, 300, 91, 91))
-        self.toEdit.setObjectName(_fromUtf8("textEdit"))
+        self.toEdit.setObjectName(_fromUtf8("toEdit"))
         self.tabWidget.addTab(self.Tab2, _fromUtf8(""))
         self.Tab3 = QtGui.QWidget()
         self.Tab3.setObjectName(_fromUtf8("Tab3"))
@@ -151,10 +151,13 @@ class Ui_MainWindow(object):
         self.actionSetPath.setObjectName(_fromUtf8("actionSetPath"))
         self.actionRefresh = QtGui.QAction(MainWindow)
         self.actionRefresh.setObjectName(_fromUtf8("actionRefresh"))
+        self.actionSetIP = QtGui.QAction(MainWindow)
+        self.actionSetIP.setObjectName(_fromUtf8("actionSetIP"))
         self.menu.addAction(self.actionLogin)
         self.menu.addAction(self.actionLogout)
         self.menu.addAction(self.actionSetPwd)
         self.menuProject.addAction(self.actionSetPath)
+        self.menuProject.addAction(self.actionSetIP)
         self.menuProject.addAction(self.actionRefresh)
         self.menubar.addAction(self.menu.menuAction())
         self.menubar.addAction(self.menuProject.menuAction())
@@ -190,4 +193,5 @@ class Ui_MainWindow(object):
         self.actionSetPwd.setText(QtGui.QApplication.translate("MainWindow", "Set Password", None, QtGui.QApplication.UnicodeUTF8))
         self.actionSetPath.setText(QtGui.QApplication.translate("MainWindow", "Set Path", None, QtGui.QApplication.UnicodeUTF8))
         self.actionRefresh.setText(QtGui.QApplication.translate("MainWindow", "Refresh", None, QtGui.QApplication.UnicodeUTF8))
+        self.actionSetIP.setText(QtGui.QApplication.translate("MainWindow", "Set IP", None, QtGui.QApplication.UnicodeUTF8))
 
