@@ -58,12 +58,12 @@ def all_files(pattern, search_path, pathsep=os.pathsep):
         for match in glob.glob(os.path.join(path, pattern)):
             yield match
 
-def writeFileUploaded(dict):
+def writeFileUploaded(dic):
     """
     将已上传的文件写入记录中
     """
     ouf = open("fileUploaded", "wb")
-    cPickle.dump(dict, ouf, 2)
+    cPickle.dump(dic, ouf, 2)
     ouf.close()
 
 class ThreadRecv(QtCore.QThread):
