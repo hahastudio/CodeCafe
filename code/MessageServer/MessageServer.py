@@ -82,7 +82,6 @@ class FSThread(threading.Thread):
                 if c != fcode:
                     with fLock:
                         fcode = c
-                        print fcode
             time.sleep(1)
 
 class EndSession(Exception):
@@ -238,7 +237,6 @@ class ChatRoom(Room):
     def do_filerequest(self, session, line):
         with fLock:
             session.push("fcode %s\r\n" % fcode)
-        print fcode
 
     def do_look(self, session, line):
         session.push("The following are in this room:\r\n")
