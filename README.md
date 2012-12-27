@@ -38,7 +38,7 @@ ColdCafe Team:
 
 操作示例：
 
-    $ git clone git://github.com/hahastudio/IM-haha.git
+    $ git clone git://github.com/hahastudio/CodeCafe.git
 
 ##Deploy Message Server & File Server
 
