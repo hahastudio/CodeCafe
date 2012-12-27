@@ -1,10 +1,12 @@
 #CodeCafe
 
-Let's code in a cafe!
+Let's enjoy coding in a cafe!
 
 该项目是ColdCafe团队为课程CS362（软件工程实践）而做的课程设计。这是一个纯**Python**项目，我们使用了**PyQt4**作为图形库。
 
 该项目允许小型开发团队的成员进行线上交流、发布信息和提交代码。
+
+项目地址： https://github.com/hahastudio/CodeCafe
 
 ##Authors
 
@@ -16,6 +18,20 @@ ColdCafe Team:
     * [alanlyy](https://github.com/alanlyy)
     * [redswallow](https://github.com/redswallow)
     * [wlwlwl](https://github.com/wlwlwl)
+
+## Git Address
+
+支持三种访问协议：
+
+* HTTP协议: `https://github.com/hahastudio/CodeCafe.git` 。
+* Git协议: `git://github.com/hahastudio/CodeCafe.git` 。
+* SSH协议: `ssh://git@github.com:hahastudio/CodeCafe.git` 。
+
+## How to clone our git
+
+操作示例：
+
+    $ git clone git://github.com/hahastudio/IM-haha.git
 
 ##Deploy Message Server & File Server
 
@@ -43,16 +59,20 @@ ColdCafe Team:
 
     > python setup-client.py py2exe
 
-## Git Address
+##Client at first glance
 
-支持三种访问协议：
+###菜单各功能简述
 
-* HTTP协议: `https://github.com/hahastudio/CodeCafe.git` 。
-* Git协议: `git://github.com/hahastudio/CodeCafe.git` 。
-* SSH协议: `ssh://git@github.com:hahastudio/CodeCafe.git` 。
+* User
+    * Login - 用于登录。
+    * Logout - 用于登出。
+* Project
+    * Set Path - 设置项目目录，文件匹配模式。
+    * Set IP - 设置服务器地址。
+    * Refresh - 登录后，点击可手动刷新服务器信息。
 
-## How to clone our git
+###连接服务器之前你应该做的
 
-操作示例：
-
-    $ git clone git://github.com/hahastudio/IM-haha.git
+* 设置服务器地址
+* 设置项目目录（可选，如果你需要上传或下载文件），设置之后您需要重新打开软件。
+* 打开登录窗口，输入用户名和密码 :)
