@@ -19,6 +19,13 @@ ColdCafe Team:
     * [redswallow](https://github.com/redswallow)
     * [wlwlwl](https://github.com/wlwlwl)
 
+##Binary downloads and sources
+
+* [Client for Windows x64](https://codecafe.googlecode.com/files/Client_Windows_x64.zip)
+* [File Server for Windows x64](https://codecafe.googlecode.com/files/FileServer_Windows_x64.zip)
+* [Message Server for WIndow x64](https://codecafe.googlecode.com/files/MessageServer_Windows_x64.zip)
+* [CodeCafe source](https://codecafe.googlecode.com/files/CodeCafe_src.zip)
+
 ## Git Address
 
 支持三种访问协议：
