@@ -63,10 +63,11 @@ class RSA(object):
         self.q = generate_prime(n)
         self.N = self.p * self.q
         self.u = (self.p - 1) * (self.q - 1)
-        self.e = 3
-        while Euclid(self.e, self.u) != 1:
-            self.e += 2
-        self.d = modinv(self.e, self.u)
+        self.d = 3
+        while Euclid(self.d, self.u) != 1:
+            self.d += 2
+        self.e = modinv(self.d, self.u)
+        del self.p, self.q, self.u
     def encrypt(self, msg):
         """encrypt the message, return a list of encoded message."""
         encode_list = [pow(ord(c), self.e, self.N) for c in msg]

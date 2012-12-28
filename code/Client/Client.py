@@ -270,6 +270,9 @@ class ThreadFileDelete(QtCore.QThread):
                 m = self.s.recv(1024)
             if m.startswith("info"):
                 pass
+            elif m.startswith("error"):
+                with msgLock:
+                    msgLst.append(m)
         elif m.startswith("error"):
             with msgLock:
                 msgLst.append(m)
