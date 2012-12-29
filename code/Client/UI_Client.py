@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UI_Client.ui'
 #
-# Created: Wed Dec 26 19:51:06 2012
+# Created: Sat Dec 29 22:50:43 2012
 #      by: PyQt4 UI code generator 4.8.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -96,6 +96,9 @@ class Ui_MainWindow(object):
         self.toEdit = QtGui.QTextEdit(self.Tab2)
         self.toEdit.setGeometry(QtCore.QRect(10, 300, 91, 91))
         self.toEdit.setObjectName(_fromUtf8("toEdit"))
+        self.clearButton = QtGui.QPushButton(self.Tab2)
+        self.clearButton.setGeometry(QtCore.QRect(20, 390, 75, 23))
+        self.clearButton.setObjectName(_fromUtf8("clearButton"))
         self.tabWidget.addTab(self.Tab2, _fromUtf8(""))
         self.Tab3 = QtGui.QWidget()
         self.Tab3.setObjectName(_fromUtf8("Tab3"))
@@ -174,6 +177,7 @@ class Ui_MainWindow(object):
         self.sendButton.setText(QtGui.QApplication.translate("MainWindow", "Send", None, QtGui.QApplication.UnicodeUTF8))
         self.label_4.setText(QtGui.QApplication.translate("MainWindow", "To", None, QtGui.QApplication.UnicodeUTF8))
         self.label_5.setText(QtGui.QApplication.translate("MainWindow", "Message", None, QtGui.QApplication.UnicodeUTF8))
+        self.clearButton.setText(QtGui.QApplication.translate("MainWindow", "Clear", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Tab2), QtGui.QApplication.translate("MainWindow", "Chat", None, QtGui.QApplication.UnicodeUTF8))
         self.uploadButton.setText(QtGui.QApplication.translate("MainWindow", "Upload", None, QtGui.QApplication.UnicodeUTF8))
         self.FileList.setSortingEnabled(True)

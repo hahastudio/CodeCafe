@@ -310,6 +310,8 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.actionSetIP.triggered.connect(self.openIPDlg)
         self.Board.editingFinished.connect(self.editBoard)
         self.appointment.editingFinished.connect(self.editAppointment)
+        self.NameList.doubleClicked.connect(self.addUserTo)
+        self.clearButton.clicked.connect(self.toEdit.clear)
         self.uploadButton.clicked.connect(self.uploadFile)
         self.downloadButton.clicked.connect(self.downloadFile)
         self.deleteButton.clicked.connect(self.deleteFile)
@@ -422,6 +424,8 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
     def logout(self):
         self.MessageSocket.sendall("logout\r\n")
         self.threfresh.runable = False
+        self.ChatBrowser.append("You have logged out.\n")
+        self.NameList.clear()
 
     def setpwd(self):
         cPwd = str(self.pwdDlgUI.cPwdEdit.text())
@@ -539,15 +543,33 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         if appointment and self.user["isAdmin"]:
             self.MessageSocket.sendall("editAppointment %s\r\n" % appointment)
 
+    def addUserTo(self):
+        toSomeone = str(self.toEdit.toPlainText())
+        nameList = set(toSomeone.split())
+        newUser = str(self.NameList.currentItem().text())
+        if newUser == self.user["username"] or newUser in nameList:
+            pass
+        else:
+            if toSomeone and toSomeone[-1] != '\n':
+                toSomeone = toSomeone + '\n'
+            toSomeone = toSomeone + newUser + '\n'
+            self.toEdit.setText(toSomeone)
+
     def sendMsg(self):
-        toSomeone = str(self.toEdit.toPlainText()).decode("utf-8")
-        msg = str(self.ChatEdit.toPlainText()).decode('utf-8')
+        toSomeone = str(self.toEdit.toPlainText())
+        msg = str(self.ChatEdit.toPlainText()).decode("utf-8")
         if msg:
             enmsg = self.rsa.encrypt(msg)
             nameList = set(toSomeone.split())
             if nameList:
-                for name in nameList:
-                    self.MessageSocket.sendall("say %s %s\r\n" % (name, cPickle.dumps(enmsg, 2)))
+                if "-all" in nameList:
+                    self.MessageSocket.sendall("say %s %s\r\n" % ("-all", cPickle.dumps(enmsg, 2)))
+                else:
+                    for name in nameList:
+                        if name == self.user['username']:
+                            pass
+                        else:
+                            self.MessageSocket.sendall("say %s %s\r\n" % (name, cPickle.dumps(enmsg, 2)))
             else:
                 self.MessageSocket.sendall("say %s %s\r\n" % ("-all", cPickle.dumps(enmsg, 2)))
         self.ChatEdit.setText("")

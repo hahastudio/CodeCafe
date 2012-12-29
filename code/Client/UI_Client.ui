@@ -160,6 +160,19 @@
        </rect>
       </property>
      </widget>
+     <widget class="QPushButton" name="clearButton">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>390</y>
+        <width>75</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Clear</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="Tab3">
      <attribute name="title">
