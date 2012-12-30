@@ -154,17 +154,22 @@ class ThreadFileRefresh(QtCore.QThread):
         global finfo
         self.s.connect((FILEHOST, FILEPORT))
         self.s.sendall("fileaccess %s\r\n" % self.fcode)
+        print "haha"
         m = ""
         while not m:
             m = self.s.recv(1024)
         if m.startswith("info"):
             self.s.sendall("refresh\r\n")
+            mMerged = ""
             while 1:
                 m = self.s.recv(1024)
                 if m.startswith("endlist"):
                     break
-                with finfoLock:
-                    finfo = cPickle.loads(m)
+                else:
+                    mMerged = mMerged + m
+            print m
+            with finfoLock:
+                finfo = cPickle.loads(mMerged)
         elif m.startswith("error"):
             with msgLock:
                 msgLst.append(m)
@@ -193,6 +198,7 @@ class ThreadFileUpload(QtCore.QThread):
                 m = self.s.recv(1024)
             if m.startswith("info"):
                 self.s.sendall("upload %s %s\r\n" % (os.path.split(f)[1], self.username))
+                time.sleep(0.5)
                 upf = open(f, "rb")
                 while True:                       
                     data = upf.read(1024)                                         
@@ -206,7 +212,7 @@ class ThreadFileUpload(QtCore.QThread):
                 with msgLock:
                     msgLst.append(m)
             self.s.close()
-            time.sleep(2)
+            time.sleep(1)
         self.finished.emit()
 
 class ThreadFileDownload(QtCore.QThread):
@@ -336,7 +342,6 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         self.patterns = cPickle.load(pathConfig)
         pathConfig.close()
         self.tempPatterns = [pattern for pattern in self.patterns]
-        self.MessageSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.fileWatcher = ThreadFile2Upload(self.uploadList, self.path, self.patterns)
         self.fileWatcher.start()
 
@@ -409,6 +414,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
         m.update(SALT)
         if username and password:
             try:
+                self.MessageSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.MessageSocket.connect((MESSAGEHOST, MESSAGEPORT))
                 self.threcv = ThreadRecv(self.MessageSocket)
                 self.threcv.start()
@@ -488,6 +494,7 @@ class ClientWindow(QMainWindow, Ui_MainWindow):
                             self.fileRefreshThread = ThreadFileRefresh(fcode)
                             QtCore.QObject.connect(self.fileRefreshThread, QtCore.SIGNAL("refreshed()"), self.displayFileList)
                             self.fileRefreshThread.start()
+                            print "display"
 
                         elif freq[0] == "upload":
                             t = ThreadFileUpload(fcode, freq[1], freq[2])

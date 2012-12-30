@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-import SocketServer, time  
+import SocketServer
+import time  
 import socket
 import os  
 import random
@@ -89,7 +90,6 @@ class MyServer(SocketServer.BaseRequestHandler):
                 continue
 
             receivedData = self.request.recv(1024)
-            
             """
             认证成功后，client可以对server进行操作，分别为download，upload，delete，refresh
             """
@@ -105,7 +105,8 @@ class MyServer(SocketServer.BaseRequestHandler):
                     self.request.sendall('start\r\n')
                 """
                 文件传输
-                """   
+                """
+                time.sleep(0.5)   
                 sfile = open(nowaddr, 'rb')   
                 while True:                       
                     data = sfile.read(1024)                                         
@@ -115,7 +116,7 @@ class MyServer(SocketServer.BaseRequestHandler):
                         intSent = self.request.send(data)   
                         data = data[intSent:]   
   
-                self.request.sendall('EOF\r\n')   
+                #self.request.sendall('EOF\r\n')   
                 sfile.close()     
 
             elif receivedData.startswith('upload'):            
@@ -234,5 +235,5 @@ if __name__ == '__main__':
     threadForFcode = fcodethread()
     threadForFcode.start()
     print "FileServer's IP: %s, port: %d" % (getip(), 50001)
-    srv = SocketServer.ThreadingTCPServer(('localhost', 50001), MyServer)   
+    srv = SocketServer.ThreadingTCPServer((getip(), 50001), MyServer)   
     srv.serve_forever()

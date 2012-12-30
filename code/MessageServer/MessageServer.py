@@ -133,7 +133,10 @@ class Room(CommandHandler):
         """
         A session (user) has left the room
         """
-        self.sessions.remove(session)
+        try:
+            self.sessions.remove(session)
+        except ValueError:
+            pass
 
     def broadcast(self, line):
         """
