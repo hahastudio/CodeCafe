@@ -62,7 +62,7 @@ ColdCafe Team:
 
 **需要PyQt4**
 
-编译`Client.py`：请先转折`Client.py`所在的目录，之后执行：
+编译`Client.py`：请先转至`Client.py`所在的目录，之后执行：
 
     > python setup-client.py py2exe
 
